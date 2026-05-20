@@ -194,6 +194,12 @@ go test ./...
 go vet ./...
 ```
 
+## 📖 API Documentation
+
+- **Reference docs:** [voicetel.com/docs/api/v0.6/voiceml/](https://voicetel.com/docs/api/v0.6/voiceml/)
+- **Validator:** [voicetel.com/voiceml/validator/](https://voicetel.com/voiceml/validator/)
+- **SDK catalogue:** [voicetel.com/docs/voiceml-sdks/](https://voicetel.com/docs/voiceml-sdks/)
+
 ## License
 
 MIT with the Commons Clause restriction. See [LICENSE](LICENSE) and [voicetel.com/legal/](https://voicetel.com/legal/).
