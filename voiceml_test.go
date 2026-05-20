@@ -135,8 +135,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.6.0" {
-		t.Fatalf("Version: want 0.6.0, got %q", voiceml.Version)
+	if voiceml.Version != "0.6.1" {
+		t.Fatalf("Version: want 0.6.1, got %q", voiceml.Version)
 	}
 
 	cases := []struct {
