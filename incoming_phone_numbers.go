@@ -36,6 +36,7 @@ type IncomingPhoneNumber struct {
 
 	Origin *string `json:"origin,omitempty"`
 	Beta   *bool   `json:"beta,omitempty"`
+	Type   *string `json:"type,omitempty"`
 
 	Capabilities IncomingPhoneNumberCapabilities `json:"capabilities"`
 

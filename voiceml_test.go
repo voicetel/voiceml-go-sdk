@@ -135,8 +135,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.6.1" {
-		t.Fatalf("Version: want 0.6.1, got %q", voiceml.Version)
+	if voiceml.Version != "0.6.2" {
+		t.Fatalf("Version: want 0.6.2, got %q", voiceml.Version)
 	}
 
 	cases := []struct {
@@ -906,5 +906,64 @@ func TestAPIErrorMoreInfo(t *testing.T) {
 	}
 	if apiErr.MoreInfo != "https://voicetel.com/docs/errors/20404" {
 		t.Fatalf("MoreInfo: want docs URL, got %q", apiErr.MoreInfo)
+	}
+}
+
+// 25. Recording.MediaURL round-trips JSON (spec v0.6.2 / D5).
+func TestRecordingMediaURLRoundTrip(t *testing.T) {
+	rSid := "RE" + strings.Repeat("a", 32)
+	mediaURL := "https://media.example.com/recordings/" + rSid + ".wav"
+	c, _, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"sid":          rSid,
+			"account_sid":  testAccountSid,
+			"call_sid":     "CA" + strings.Repeat("b", 32),
+			"status":       "completed",
+			"api_version":  "2010-04-01",
+			"uri":          "/x",
+			"media_url":    mediaURL,
+		}),
+	}, nil)
+	defer cleanup()
+
+	rec, err := c.Recordings.Get(context.Background(), rSid)
+	if err != nil {
+		t.Fatalf("Recordings.Get: %v", err)
+	}
+	if rec.MediaURL != mediaURL {
+		t.Fatalf("MediaURL: want %q, got %q", mediaURL, rec.MediaURL)
+	}
+}
+
+// 26. IncomingPhoneNumber.Type is decoded when present (spec v0.6.2 / D6).
+// VoiceML emits empty string for Type but the Twilio-compat field still needs
+// to round-trip when non-empty (e.g. when proxying upstream Twilio numbers).
+func TestIncomingPhoneNumberTypeField(t *testing.T) {
+	pnSid := "PN" + strings.Repeat("f", 32)
+	c, _, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"sid":          pnSid,
+			"account_sid":  testAccountSid,
+			"phone_number": "+18005550003",
+			"api_version":  "2010-04-01",
+			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
+				testAccountSid, pnSid),
+			"type": "local",
+			"capabilities": map[string]any{
+				"voice": true, "sms": false, "mms": false, "fax": false,
+			},
+		}),
+	}, nil)
+	defer cleanup()
+
+	pn, err := c.IncomingPhoneNumbers.Get(context.Background(), pnSid)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if pn.Type == nil {
+		t.Fatal("Type: want non-nil pointer, got nil")
+	}
+	if *pn.Type != "local" {
+		t.Fatalf("Type: want %q, got %q", "local", *pn.Type)
 	}
 }

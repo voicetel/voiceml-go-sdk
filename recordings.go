@@ -23,6 +23,7 @@ type Recording struct {
 	Duration          string         `json:"duration,omitempty"`
 	APIVersion        string         `json:"api_version,omitempty"`
 	URI               string         `json:"uri,omitempty"`
+	MediaURL          string         `json:"media_url,omitempty"`
 	DateCreated       string         `json:"date_created,omitempty"`
 	DateUpdated       string         `json:"date_updated,omitempty"`
 	StartTime         string         `json:"start_time,omitempty"`
