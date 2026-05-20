@@ -127,7 +127,7 @@ func (s *RecordingsService) Get(ctx context.Context, recordingSid string) (*Reco
 // (typically "audio/wav"). On 410 Gone the audio is unavailable and an
 // *APIError wrapping ErrGone is returned.
 func (s *RecordingsService) GetAudio(ctx context.Context, recordingSid string) ([]byte, string, error) {
-	return s.c.t.fetchBytes(ctx, s.c.pathf("Recordings", recordingSid)+".wav")
+	return s.c.t.fetchBytes(ctx, s.c.pathfExt(".wav", "Recordings", recordingSid))
 }
 
 // Delete removes a recording. DELETE /Recordings/{sid}.

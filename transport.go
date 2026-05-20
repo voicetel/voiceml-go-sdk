@@ -235,9 +235,10 @@ func parseError(resp *http.Response) error {
 func decodeError(status int, body []byte) error {
 	var code any
 	message := fmt.Sprintf("HTTP %d", status)
+	var moreInfo string
 
 	if len(body) > 0 {
-		// Twilio-shape: {"code": <int|string>, "message": <string>, ...}
+		// Twilio-shape: {"code": <int|string>, "message": <string>, "more_info": <string>, ...}
 		var parsed map[string]any
 		if err := json.Unmarshal(body, &parsed); err == nil {
 			if raw, ok := parsed["code"]; ok {
@@ -251,9 +252,12 @@ func decodeError(status int, body []byte) error {
 			if m, ok := parsed["message"].(string); ok && m != "" {
 				message = m
 			}
+			if mi, ok := parsed["more_info"].(string); ok {
+				moreInfo = mi
+			}
 		}
 	}
-	return newAPIError(status, code, message, body)
+	return newAPIError(status, code, message, moreInfo, body)
 }
 
 // sleepBackoff waits before the next retry attempt. Honors a numeric

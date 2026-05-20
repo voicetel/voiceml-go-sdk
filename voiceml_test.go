@@ -135,8 +135,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.4.0" {
-		t.Fatalf("Version: want 0.4.0, got %q", voiceml.Version)
+	if voiceml.Version != "0.5.0" {
+		t.Fatalf("Version: want 0.5.0, got %q", voiceml.Version)
 	}
 
 	cases := []struct {
@@ -146,6 +146,9 @@ func TestModuleSurface(t *testing.T) {
 	}{
 		{"missing AccountSid", voiceml.ClientOptions{APIKey: testAPIKey}, "AccountSid is required"},
 		{"missing APIKey", voiceml.ClientOptions{AccountSid: testAccountSid}, "APIKey is required"},
+		{"both APIKey and AuthToken", voiceml.ClientOptions{
+			AccountSid: testAccountSid, APIKey: testAPIKey, AuthToken: "alt",
+		}, "set APIKey or AuthToken, not both"},
 		{"negative MaxRetries", voiceml.ClientOptions{
 			AccountSid: testAccountSid, APIKey: testAPIKey, MaxRetries: voiceml.Int(-1),
 		}, "MaxRetries must be >= 0"},
@@ -184,7 +187,8 @@ func TestDefaultBaseURL(t *testing.T) {
 	}
 	// All resource services wired up.
 	if c.Calls == nil || c.Conferences == nil || c.Queues == nil ||
-		c.Applications == nil || c.Recordings == nil || c.Diagnostics == nil {
+		c.Applications == nil || c.Recordings == nil || c.Diagnostics == nil ||
+		c.IncomingPhoneNumbers == nil {
 		t.Fatal("not all services wired up on Client")
 	}
 }
@@ -213,7 +217,7 @@ func TestCallsCreate(t *testing.T) {
 		t.Fatalf("want 1 request, got %d", len(rec.requests))
 	}
 	req := rec.requests[0]
-	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/Calls", testAccountSid)
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/Calls.json", testAccountSid)
 	if req.Path != wantPath {
 		t.Fatalf("path: want %q, got %q", wantPath, req.Path)
 	}
@@ -490,11 +494,12 @@ func TestRetry503Then200(t *testing.T) {
 	}
 }
 
-// 13. Recordings.GetAudio — returns bytes + content-type from a 200.
+// 13. Recordings.GetAudio — returns bytes + content-type from a 200. The
+// request path must end in ".wav" (not ".json" nor ".json.wav").
 func TestRecordingsGetAudio(t *testing.T) {
 	reSid := "RE" + strings.Repeat("e", 32)
 	wavBytes := []byte{0x52, 0x49, 0x46, 0x46} // "RIFF"
-	c, _, cleanup := newClient(t, []handlerStep{
+	c, rec, cleanup := newClient(t, []handlerStep{
 		func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "audio/wav")
 			w.WriteHeader(200)
@@ -512,6 +517,11 @@ func TestRecordingsGetAudio(t *testing.T) {
 	}
 	if string(body) != string(wavBytes) {
 		t.Fatalf("body: want %x, got %x", wavBytes, body)
+	}
+	gotPath := rec.requests[0].Path
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/Recordings/%s.wav", testAccountSid, reSid)
+	if gotPath != wantPath {
+		t.Fatalf("path: want %q, got %q", wantPath, gotPath)
 	}
 }
 
@@ -617,5 +627,284 @@ func TestRecordingsGetAudio410(t *testing.T) {
 	}
 	if !errors.Is(err, voiceml.ErrGone) {
 		t.Fatalf("want ErrGone, got %v", err)
+	}
+}
+
+// --- v0.5.0 additions ---
+
+// 18. AuthToken alias: NewClient accepts AuthToken in place of APIKey and
+// uses it as the HTTP Basic password on the wire.
+func TestAuthTokenAlias(t *testing.T) {
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, callPayload("")),
+	}, func(opts *voiceml.ClientOptions) {
+		opts.APIKey = ""
+		opts.AuthToken = testAPIKey // reuse the constant — it's the wire password
+	})
+	defer cleanup()
+
+	sid := "CA" + strings.Repeat("0", 32)
+	if _, err := c.Calls.Get(context.Background(), sid); err != nil {
+		t.Fatalf("Calls.Get: %v", err)
+	}
+	if got := rec.requests[0].Header.Get("Authorization"); got != basicAuthHeader() {
+		t.Fatalf("Authorization: want %q, got %q", basicAuthHeader(), got)
+	}
+}
+
+// 19. IncomingPhoneNumbers.List — query params encode, response decodes,
+// request path ends in ".json", pagination envelope round-trips.
+func TestIncomingPhoneNumbersList(t *testing.T) {
+	pnSid := "PN" + strings.Repeat("a", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"incoming_phone_numbers": []any{
+				map[string]any{
+					"sid":          pnSid,
+					"account_sid":  testAccountSid,
+					"phone_number": "+18005551234",
+					"api_version":  "2010-04-01",
+					"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
+						testAccountSid, pnSid),
+					"capabilities": map[string]any{
+						"voice": true, "sms": false, "mms": false, "fax": false,
+					},
+				},
+			},
+			"page":           0,
+			"page_size":      50,
+			"total":          1,
+			"first_page_uri": "/IncomingPhoneNumbers?Page=0&PageSize=50",
+			"next_page_uri":  "",
+			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers.json",
+				testAccountSid),
+		}),
+	}, nil)
+	defer cleanup()
+
+	page := 0
+	pageSize := 50
+	list, err := c.IncomingPhoneNumbers.List(context.Background(),
+		&voiceml.ListIncomingPhoneNumbersParams{
+			PhoneNumber: "+18005551234",
+			Page:        &page,
+			PageSize:    &pageSize,
+		})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(list.IncomingPhoneNumbers) != 1 {
+		t.Fatalf("len: want 1, got %d", len(list.IncomingPhoneNumbers))
+	}
+	pn := list.IncomingPhoneNumbers[0]
+	if !strings.HasPrefix(pn.Sid, "PN") {
+		t.Fatalf("expected PN-prefixed sid, got %q", pn.Sid)
+	}
+	if pn.PhoneNumber != "+18005551234" {
+		t.Fatalf("phone_number: want +18005551234, got %q", pn.PhoneNumber)
+	}
+	if !pn.Capabilities.Voice {
+		t.Fatal("capabilities.voice: want true")
+	}
+	if list.PageSize != 50 || list.Page != 0 {
+		t.Fatalf("pagination: want page=0 size=50, got page=%d size=%d", list.Page, list.PageSize)
+	}
+	if list.FirstPageURI == "" {
+		t.Fatal("first_page_uri missing from list envelope")
+	}
+
+	req := rec.requests[0]
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers.json",
+		testAccountSid)
+	if req.Path != wantPath {
+		t.Fatalf("path: want %q, got %q", wantPath, req.Path)
+	}
+	for _, want := range []string{
+		"PhoneNumber=%2B18005551234",
+		"Page=0",
+		"PageSize=50",
+	} {
+		if !strings.Contains(req.Query, want) {
+			t.Errorf("query missing %q; got %q", want, req.Query)
+		}
+	}
+}
+
+// 20. IncomingPhoneNumbers.Create — required PhoneNumber on the wire,
+// optional VoiceUrl, 201 → IncomingPhoneNumber, path ends in ".json".
+func TestIncomingPhoneNumbersCreate(t *testing.T) {
+	pnSid := "PN" + strings.Repeat("b", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(201, map[string]any{
+			"sid":          pnSid,
+			"account_sid":  testAccountSid,
+			"phone_number": "+18005550000",
+			"api_version":  "2010-04-01",
+			"voice_url":    "https://example.com/twiml",
+			"voice_method": "POST",
+			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
+				testAccountSid, pnSid),
+			"capabilities": map[string]any{
+				"voice": true, "sms": false, "mms": false, "fax": false,
+			},
+		}),
+	}, nil)
+	defer cleanup()
+
+	pn, err := c.IncomingPhoneNumbers.Create(context.Background(),
+		voiceml.CreateIncomingPhoneNumberParams{
+			PhoneNumber: "+18005550000",
+			VoiceURL:    voiceml.String("https://example.com/twiml"),
+			VoiceMethod: voiceml.String("POST"),
+		})
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if pn.Sid != pnSid {
+		t.Fatalf("sid: want %q, got %q", pnSid, pn.Sid)
+	}
+	if pn.VoiceURL == nil || *pn.VoiceURL != "https://example.com/twiml" {
+		t.Fatalf("voice_url didn't round-trip: %+v", pn.VoiceURL)
+	}
+
+	req := rec.requests[0]
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers.json",
+		testAccountSid)
+	if req.Path != wantPath {
+		t.Fatalf("path: want %q, got %q", wantPath, req.Path)
+	}
+	if req.Method != "POST" {
+		t.Fatalf("method: want POST, got %s", req.Method)
+	}
+	body := string(req.Body)
+	for _, want := range []string{
+		"PhoneNumber=%2B18005550000",
+		"VoiceUrl=https%3A%2F%2Fexample.com%2Ftwiml",
+		"VoiceMethod=POST",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("body missing %q; got %q", want, body)
+		}
+	}
+}
+
+// 21. IncomingPhoneNumbers.Get — single-row fetch, request path includes
+// {PN-sid}.json.
+func TestIncomingPhoneNumbersGet(t *testing.T) {
+	pnSid := "PN" + strings.Repeat("c", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"sid":          pnSid,
+			"account_sid":  testAccountSid,
+			"phone_number": "+18005550001",
+			"api_version":  "2010-04-01",
+			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
+				testAccountSid, pnSid),
+			"capabilities": map[string]any{
+				"voice": true, "sms": false, "mms": false, "fax": false,
+			},
+		}),
+	}, nil)
+	defer cleanup()
+
+	pn, err := c.IncomingPhoneNumbers.Get(context.Background(), pnSid)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if pn.Sid != pnSid {
+		t.Fatalf("sid: want %q, got %q", pnSid, pn.Sid)
+	}
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
+		testAccountSid, pnSid)
+	if rec.requests[0].Path != wantPath {
+		t.Fatalf("path: want %q, got %q", wantPath, rec.requests[0].Path)
+	}
+}
+
+// 22. IncomingPhoneNumbers.Update — only-set-fields-touched on the wire.
+func TestIncomingPhoneNumbersUpdate(t *testing.T) {
+	pnSid := "PN" + strings.Repeat("d", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"sid":          pnSid,
+			"account_sid":  testAccountSid,
+			"phone_number": "+18005550002",
+			"api_version":  "2010-04-01",
+			"voice_url":    "https://example.com/new",
+			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
+				testAccountSid, pnSid),
+			"capabilities": map[string]any{
+				"voice": true, "sms": false, "mms": false, "fax": false,
+			},
+		}),
+	}, nil)
+	defer cleanup()
+
+	pn, err := c.IncomingPhoneNumbers.Update(context.Background(), pnSid,
+		voiceml.UpdateIncomingPhoneNumberParams{
+			VoiceURL: voiceml.String("https://example.com/new"),
+		})
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if pn.VoiceURL == nil || *pn.VoiceURL != "https://example.com/new" {
+		t.Fatalf("voice_url didn't round-trip: %+v", pn.VoiceURL)
+	}
+	body := string(rec.requests[0].Body)
+	if !strings.Contains(body, "VoiceUrl=https%3A%2F%2Fexample.com%2Fnew") {
+		t.Errorf("body missing VoiceUrl; got %q", body)
+	}
+	// VoiceMethod was not set on the request — must not appear on the wire.
+	if strings.Contains(body, "VoiceMethod=") {
+		t.Errorf("body should not contain VoiceMethod (unset); got %q", body)
+	}
+}
+
+// 23. IncomingPhoneNumbers.Delete — 204 No Content, returns nil.
+func TestIncomingPhoneNumbersDelete(t *testing.T) {
+	pnSid := "PN" + strings.Repeat("e", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(204)
+		},
+	}, nil)
+	defer cleanup()
+
+	if err := c.IncomingPhoneNumbers.Delete(context.Background(), pnSid); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	if rec.requests[0].Method != "DELETE" {
+		t.Fatalf("method: want DELETE, got %s", rec.requests[0].Method)
+	}
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
+		testAccountSid, pnSid)
+	if rec.requests[0].Path != wantPath {
+		t.Fatalf("path: want %q, got %q", wantPath, rec.requests[0].Path)
+	}
+}
+
+// 24. APIError.MoreInfo is populated from the response body's `more_info`.
+func TestAPIErrorMoreInfo(t *testing.T) {
+	sid := "CA" + strings.Repeat("1", 32)
+	c, _, cleanup := newClient(t, []handlerStep{
+		jsonStep(404, map[string]any{
+			"code":      20404,
+			"message":   "Not Found",
+			"more_info": "https://voicetel.com/docs/errors/20404",
+			"status":    404,
+		}),
+	}, nil)
+	defer cleanup()
+
+	_, err := c.Calls.Get(context.Background(), sid)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	var apiErr *voiceml.APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("want *APIError, got %T", err)
+	}
+	if apiErr.MoreInfo != "https://voicetel.com/docs/errors/20404" {
+		t.Fatalf("MoreInfo: want docs URL, got %q", apiErr.MoreInfo)
 	}
 }

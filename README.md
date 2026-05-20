@@ -64,6 +64,7 @@ func main() {
 | `client.Queues` | `/Queues` | create/list/update/delete queues, peek, dequeue (front or specific member) |
 | `client.Applications` | `/Applications` | CRUD on stored TwiML+callback bundles |
 | `client.Recordings` | `/Recordings` | account-wide list, metadata fetch, audio fetch (follows S3 redirect), delete |
+| `client.IncomingPhoneNumbers` | `/IncomingPhoneNumbers` | tenant-self-serve list/assign/fetch/update/release of DIDs |
 | `client.Diagnostics` | `/health`, `/openapi.json` | deep liveness probe; live spec fetch (unauthenticated) |
 
 ## Errors
@@ -93,12 +94,12 @@ if errors.Is(err, voiceml.ErrRateLimit) {
 | 5xx | `ErrServer` | `IsServer(err)` |
 | network | `ErrTransport` | — |
 
-The Twilio-shape body (`code`, `message`, `more_info`, `status`) is parsed into `apiErr.Code` and `apiErr.Message`, with the raw response on `apiErr.Body`:
+The Twilio-shape body (`code`, `message`, `more_info`, `status`) is parsed into `apiErr.Code`, `apiErr.Message`, and `apiErr.MoreInfo`, with the raw response on `apiErr.Body`:
 
 ```go
 var apiErr *voiceml.APIError
 if errors.As(err, &apiErr) {
-    fmt.Println(apiErr.StatusCode, apiErr.Code, apiErr.Message)
+    fmt.Println(apiErr.StatusCode, apiErr.Code, apiErr.Message, apiErr.MoreInfo)
 }
 ```
 
@@ -117,6 +118,12 @@ tw := twilio.NewRestClientWithParams(twilio.ClientParams{
 import voiceml "github.com/voicetel/voiceml-go-sdk"
 c, _ := voiceml.NewClient(voiceml.ClientOptions{
     AccountSid: "AC...", APIKey: "<api_key>",
+})
+
+// Migrating from twilio-go? AuthToken is accepted as an alias for APIKey
+// so existing wiring just works:
+c, _ = voiceml.NewClient(voiceml.ClientOptions{
+    AccountSid: "AC...", AuthToken: "<api_key>",
 })
 ```
 

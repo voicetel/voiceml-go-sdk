@@ -42,17 +42,19 @@ var (
 
 // APIError is the single error type returned for non-2xx responses. The
 // HTTP status determines which sentinel (ErrNotFound, ErrRateLimit, ...) it
-// wraps; the parsed Twilio-shape body populates Code and Message.
+// wraps; the parsed Twilio-shape body populates Code, Message, and MoreInfo.
 //
 // Inspect:
 //   - StatusCode  HTTP status code from the server.
 //   - Code        Numeric/string code from the body's `code` field (Twilio convention).
 //   - Message     Human-readable message (from the body's `message`, or "HTTP <status>").
+//   - MoreInfo    Documentation URL from the body's `more_info` field. Empty if absent.
 //   - Body        Raw bytes of the response body, useful for non-JSON failures.
 type APIError struct {
 	StatusCode int
 	Code       any // numeric (int64) or string per Twilio convention; nil if absent
 	Message    string
+	MoreInfo   string
 	Body       []byte
 	wrapped    error
 }
@@ -83,7 +85,7 @@ func IsServer(err error) bool { return errors.Is(err, ErrServer) }
 
 // newAPIError builds an *APIError from a parsed response and pins the right
 // sentinel onto its Unwrap chain.
-func newAPIError(status int, code any, message string, body []byte) *APIError {
+func newAPIError(status int, code any, message, moreInfo string, body []byte) *APIError {
 	if message == "" {
 		message = fmt.Sprintf("HTTP %d", status)
 	}
@@ -91,6 +93,7 @@ func newAPIError(status int, code any, message string, body []byte) *APIError {
 		StatusCode: status,
 		Code:       code,
 		Message:    message,
+		MoreInfo:   moreInfo,
 		Body:       body,
 		wrapped:    sentinelFor(status),
 	}
