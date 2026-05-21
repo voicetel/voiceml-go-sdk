@@ -87,6 +87,19 @@ func (p DequeueParams) form() url.Values {
 	return v
 }
 
+// ListQueueMembersParams are the pagination query params for GET /Queues/{sid}/Members.
+type ListQueueMembersParams struct {
+	Page     *int
+	PageSize *int
+}
+
+func (p ListQueueMembersParams) query() url.Values {
+	v := url.Values{}
+	setIntP(v, "Page", p.Page)
+	setIntP(v, "PageSize", p.PageSize)
+	return v
+}
+
 // Create makes a new queue. POST /Queues.
 func (s *QueuesService) Create(ctx context.Context, params CreateQueueParams) (*Queue, error) {
 	var out Queue
@@ -153,11 +166,12 @@ func (s *QueuesService) Delete(ctx context.Context, queueSid string) error {
 
 // ListMembers returns the calls currently waiting in a queue, in position
 // order. GET /Queues/{sid}/Members.
-func (s *QueuesService) ListMembers(ctx context.Context, queueSid string) (*QueueMemberList, error) {
+func (s *QueuesService) ListMembers(ctx context.Context, queueSid string, params ListQueueMembersParams) (*QueueMemberList, error) {
 	var out QueueMemberList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Queues", queueSid, "Members"),
+		query:  params.query(),
 	}, &out)
 	if err != nil {
 		return nil, err

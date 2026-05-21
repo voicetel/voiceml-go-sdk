@@ -63,6 +63,21 @@ func (p ApplicationParams) form() url.Values {
 	return v
 }
 
+// ListApplicationsParams are the filter / pagination query params for GET /Applications.
+type ListApplicationsParams struct {
+	FriendlyName string
+	Page         *int
+	PageSize     *int
+}
+
+func (p ListApplicationsParams) query() url.Values {
+	v := url.Values{}
+	setString(v, "FriendlyName", p.FriendlyName)
+	setIntP(v, "Page", p.Page)
+	setIntP(v, "PageSize", p.PageSize)
+	return v
+}
+
 // Create makes a new application. POST /Applications.
 func (s *ApplicationsService) Create(ctx context.Context, params ApplicationParams) (*Application, error) {
 	var out Application
@@ -78,11 +93,12 @@ func (s *ApplicationsService) Create(ctx context.Context, params ApplicationPara
 }
 
 // List returns all applications for this account. GET /Applications.
-func (s *ApplicationsService) List(ctx context.Context) (*ApplicationList, error) {
+func (s *ApplicationsService) List(ctx context.Context, params ListApplicationsParams) (*ApplicationList, error) {
 	var out ApplicationList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Applications"),
+		query:  params.query(),
 	}, &out)
 	if err != nil {
 		return nil, err

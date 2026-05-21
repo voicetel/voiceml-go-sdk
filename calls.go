@@ -164,13 +164,19 @@ func (p UpdateCallParams) form() url.Values {
 }
 
 // ListCallsParams are the filter / pagination query params for GET /Calls.
-// StartTimeGte / StartTimeLte map to the literal Twilio query keys
+// StartTimeGte / StartTimeLte map to the legacy Twilio query keys
 // "StartTime>=" / "StartTime<=" on the wire.
 type ListCallsParams struct {
 	To            string
 	From          string
 	Status        string
 	ParentCallSid string
+	StartTime     string
+	StartTimeLt   string
+	StartTimeGt   string
+	EndTime       string
+	EndTimeLt     string
+	EndTimeGt     string
 	StartTimeGte  string
 	StartTimeLte  string
 	Page          *int
@@ -183,8 +189,27 @@ func (p ListCallsParams) query() url.Values {
 	setString(v, "From", p.From)
 	setString(v, "Status", p.Status)
 	setString(v, "ParentCallSid", p.ParentCallSid)
+	setString(v, "StartTime", p.StartTime)
+	setString(v, "StartTime<", p.StartTimeLt)
+	setString(v, "StartTime>", p.StartTimeGt)
+	setString(v, "EndTime", p.EndTime)
+	setString(v, "EndTime<", p.EndTimeLt)
+	setString(v, "EndTime>", p.EndTimeGt)
 	setString(v, "StartTime>=", p.StartTimeGte)
 	setString(v, "StartTime<=", p.StartTimeLte)
+	setIntP(v, "Page", p.Page)
+	setIntP(v, "PageSize", p.PageSize)
+	return v
+}
+
+// ListPageParams are shared Page / PageSize query params for stub list endpoints.
+type ListPageParams struct {
+	Page     *int
+	PageSize *int
+}
+
+func (p ListPageParams) query() url.Values {
+	v := url.Values{}
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
 	return v
@@ -257,11 +282,12 @@ func (s *CallsService) Delete(ctx context.Context, callSid string) error {
 // --- Call-scoped Recordings ---
 
 // ListRecordings returns recordings made on this call. GET /Calls/{sid}/Recordings.
-func (s *CallsService) ListRecordings(ctx context.Context, callSid string) (*RecordingList, error) {
+func (s *CallsService) ListRecordings(ctx context.Context, callSid string, params ListCallRecordingsParams) (*RecordingList, error) {
 	var out RecordingList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Calls", callSid, "Recordings"),
+		query:  params.query(),
 	}, &out)
 	if err != nil {
 		return nil, err
@@ -712,11 +738,12 @@ type EventsList struct {
 
 // ListNotifications hits the compat stub at /Calls/{sid}/Notifications.
 // Always returns an empty list when the call exists.
-func (s *CallsService) ListNotifications(ctx context.Context, callSid string) (*NotificationsList, error) {
+func (s *CallsService) ListNotifications(ctx context.Context, callSid string, params ListPageParams) (*NotificationsList, error) {
 	var out NotificationsList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Calls", callSid, "Notifications"),
+		query:  params.query(),
 	}, &out)
 	if err != nil {
 		return nil, err
@@ -726,11 +753,12 @@ func (s *CallsService) ListNotifications(ctx context.Context, callSid string) (*
 
 // ListEvents hits the compat stub at /Calls/{sid}/Events. Always returns an
 // empty list when the call exists.
-func (s *CallsService) ListEvents(ctx context.Context, callSid string) (*EventsList, error) {
+func (s *CallsService) ListEvents(ctx context.Context, callSid string, params ListPageParams) (*EventsList, error) {
 	var out EventsList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Calls", callSid, "Events"),
+		query:  params.query(),
 	}, &out)
 	if err != nil {
 		return nil, err

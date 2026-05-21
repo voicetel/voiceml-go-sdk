@@ -135,8 +135,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.6.2" {
-		t.Fatalf("Version: want 0.6.2, got %q", voiceml.Version)
+	if voiceml.Version != "0.6.3" {
+		t.Fatalf("Version: want 0.6.3, got %q", voiceml.Version)
 	}
 
 	cases := []struct {
@@ -965,5 +965,170 @@ func TestIncomingPhoneNumberTypeField(t *testing.T) {
 	}
 	if *pn.Type != "local" {
 		t.Fatalf("Type: want %q, got %q", "local", *pn.Type)
+	}
+}
+
+// 27. Participant coaching fields round-trip JSON (spec v0.6.3).
+func TestParticipantCoachingFields(t *testing.T) {
+	cfSid := "CF" + strings.Repeat("c", 32)
+	callSid := "CA" + strings.Repeat("d", 32)
+	coachSid := "CA" + strings.Repeat("e", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"call_sid":                 callSid,
+			"conference_sid":           cfSid,
+			"account_sid":              testAccountSid,
+			"muted":                    false,
+			"hold":                     false,
+			"coaching":                 true,
+			"call_sid_to_coach":        coachSid,
+			"queue_time":               "12",
+			"start_conference_on_enter": true,
+			"end_conference_on_exit":   false,
+			"status":                   "connected",
+			"api_version":              "2010-04-01",
+			"uri":                      "/x",
+		}),
+	}, nil)
+	defer cleanup()
+
+	p, err := c.Conferences.GetParticipant(context.Background(), cfSid, callSid)
+	if err != nil {
+		t.Fatalf("GetParticipant: %v", err)
+	}
+	if !p.Coaching {
+		t.Fatal("Coaching: want true")
+	}
+	if p.CallSidToCoach != coachSid {
+		t.Fatalf("CallSidToCoach: want %q, got %q", coachSid, p.CallSidToCoach)
+	}
+	if p.QueueTime != "12" {
+		t.Fatalf("QueueTime: want %q, got %q", "12", p.QueueTime)
+	}
+	if len(rec.requests) != 1 {
+		t.Fatalf("requests: want 1, got %d", len(rec.requests))
+	}
+}
+
+// 28. Recording.ErrorCode and StartConferenceRecordingAPI source (spec v0.6.3).
+func TestRecordingErrorCodeAndSource(t *testing.T) {
+	rSid := "RE" + strings.Repeat("f", 32)
+	c, _, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"sid":          rSid,
+			"account_sid":  testAccountSid,
+			"call_sid":     "CA" + strings.Repeat("0", 32),
+			"status":       "completed",
+			"source":       "StartConferenceRecordingAPI",
+			"error_code":   nil,
+			"api_version":  "2010-04-01",
+			"uri":          "/x",
+		}),
+	}, nil)
+	defer cleanup()
+
+	rec, err := c.Recordings.Get(context.Background(), rSid)
+	if err != nil {
+		t.Fatalf("Recordings.Get: %v", err)
+	}
+	if rec.Source != "StartConferenceRecordingAPI" {
+		t.Fatalf("Source: want StartConferenceRecordingAPI, got %q", rec.Source)
+	}
+	if rec.ErrorCode != nil {
+		t.Fatalf("ErrorCode: want nil, got %v", rec.ErrorCode)
+	}
+}
+
+// 29. Calls.List sends StartTime/EndTime triple operators (spec v0.6.3).
+func TestCallsListStartTimeEndTimeFilters(t *testing.T) {
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{"calls": []any{}, "page": 0, "page_size": 50}),
+	}, nil)
+	defer cleanup()
+
+	_, err := c.Calls.List(context.Background(), voiceml.ListCallsParams{
+		StartTime:   "2026-05-01",
+		StartTimeLt: "2026-05-02",
+		StartTimeGt: "2026-04-30",
+		EndTime:     "2026-05-21",
+		EndTimeLt:   "2026-05-22",
+		EndTimeGt:   "2026-05-20",
+	})
+	if err != nil {
+		t.Fatalf("Calls.List: %v", err)
+	}
+	q := rec.requests[0].Query
+	for _, want := range []string{
+		"StartTime=2026-05-01",
+		"StartTime%3C=2026-05-02",
+		"StartTime%3E=2026-04-30",
+		"EndTime=2026-05-21",
+		"EndTime%3C=2026-05-22",
+		"EndTime%3E=2026-05-20",
+	} {
+		if !strings.Contains(q, want) {
+			t.Fatalf("query %q missing %q", q, want)
+		}
+	}
+}
+
+// 30. Recordings.List sends DateCreated filters (spec v0.6.3).
+func TestRecordingsListDateCreatedFilters(t *testing.T) {
+	callSid := "CA" + strings.Repeat("1", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{"recordings": []any{}, "page": 0, "page_size": 50}),
+	}, nil)
+	defer cleanup()
+
+	_, err := c.Recordings.List(context.Background(), voiceml.ListRecordingsParams{
+		DateCreated:   "2026-05-01",
+		DateCreatedLt: "2026-05-02",
+		DateCreatedGt: "2026-04-30",
+		CallSid:       callSid,
+	})
+	if err != nil {
+		t.Fatalf("Recordings.List: %v", err)
+	}
+	q := rec.requests[0].Query
+	for _, want := range []string{
+		"DateCreated=2026-05-01",
+		"DateCreated%3C=2026-05-02",
+		"DateCreated%3E=2026-04-30",
+		"CallSid=" + callSid,
+	} {
+		if !strings.Contains(q, want) {
+			t.Fatalf("query %q missing %q", q, want)
+		}
+	}
+}
+
+// 31. Queues.Create accepts MaxSize=0 (unlimited, spec v0.6.3).
+func TestQueuesCreateMaxSizeZero(t *testing.T) {
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(201, map[string]any{
+			"sid":               "QU" + strings.Repeat("0", 32),
+			"account_sid":       testAccountSid,
+			"friendly_name":     "unlimited",
+			"current_size":      0,
+			"max_size":          0,
+			"average_wait_time": 0,
+			"date_created":      "x",
+			"date_updated":      "x",
+			"uri":               "/x",
+		}),
+	}, nil)
+	defer cleanup()
+
+	maxSize := 0
+	_, err := c.Queues.Create(context.Background(), voiceml.CreateQueueParams{
+		FriendlyName: "unlimited",
+		MaxSize:      &maxSize,
+	})
+	if err != nil {
+		t.Fatalf("Queues.Create: %v", err)
+	}
+	body := string(rec.requests[0].Body)
+	if !strings.Contains(body, "MaxSize=0") {
+		t.Fatalf("body: want MaxSize=0, got %q", body)
 	}
 }

@@ -24,6 +24,7 @@ type Recording struct {
 	APIVersion        string         `json:"api_version,omitempty"`
 	URI               string         `json:"uri,omitempty"`
 	MediaURL          string         `json:"media_url,omitempty"`
+	ErrorCode         *int           `json:"error_code"`
 	DateCreated       string         `json:"date_created,omitempty"`
 	DateUpdated       string         `json:"date_updated,omitempty"`
 	StartTime         string         `json:"start_time,omitempty"`
@@ -83,12 +84,41 @@ func (p UpdateRecordingParams) form() url.Values {
 
 // ListRecordingsParams are the query params for GET /Recordings (account-scoped).
 type ListRecordingsParams struct {
-	Page     *int
-	PageSize *int
+	DateCreated   string
+	DateCreatedLt string
+	DateCreatedGt string
+	CallSid       string
+	ConferenceSid string
+	Page          *int
+	PageSize      *int
 }
 
 func (p ListRecordingsParams) query() url.Values {
 	v := url.Values{}
+	setString(v, "DateCreated", p.DateCreated)
+	setString(v, "DateCreated<", p.DateCreatedLt)
+	setString(v, "DateCreated>", p.DateCreatedGt)
+	setString(v, "CallSid", p.CallSid)
+	setString(v, "ConferenceSid", p.ConferenceSid)
+	setIntP(v, "Page", p.Page)
+	setIntP(v, "PageSize", p.PageSize)
+	return v
+}
+
+// ListCallRecordingsParams are the query params for GET /Calls/{sid}/Recordings.
+type ListCallRecordingsParams struct {
+	DateCreated   string
+	DateCreatedLt string
+	DateCreatedGt string
+	Page          *int
+	PageSize      *int
+}
+
+func (p ListCallRecordingsParams) query() url.Values {
+	v := url.Values{}
+	setString(v, "DateCreated", p.DateCreated)
+	setString(v, "DateCreated<", p.DateCreatedLt)
+	setString(v, "DateCreated>", p.DateCreatedGt)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
 	return v

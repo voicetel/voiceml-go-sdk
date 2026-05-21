@@ -39,6 +39,9 @@ type Participant struct {
 	AccountSid             string `json:"account_sid"`
 	Muted                  bool   `json:"muted"`
 	Hold                   bool   `json:"hold"`
+	Coaching               bool   `json:"coaching"`
+	CallSidToCoach         string `json:"call_sid_to_coach,omitempty"`
+	QueueTime              string `json:"queue_time"`
 	StartConferenceOnEnter bool   `json:"start_conference_on_enter"`
 	EndConferenceOnExit    bool   `json:"end_conference_on_exit"`
 	Status                 string `json:"status"`
@@ -82,12 +85,50 @@ func (p UpdateParticipantParams) form() url.Values {
 	return v
 }
 
+// ListConferencesParams are the filter / pagination query params for GET /Conferences.
+type ListConferencesParams struct {
+	FriendlyName string
+	Status       string
+	Page         *int
+	PageSize     *int
+}
+
+func (p ListConferencesParams) query() url.Values {
+	v := url.Values{}
+	setString(v, "FriendlyName", p.FriendlyName)
+	setString(v, "Status", p.Status)
+	setIntP(v, "Page", p.Page)
+	setIntP(v, "PageSize", p.PageSize)
+	return v
+}
+
+// ListParticipantsParams are the filter / pagination query params for
+// GET /Conferences/{sid}/Participants.
+type ListParticipantsParams struct {
+	Muted    *bool
+	Hold     *bool
+	Coaching *bool
+	Page     *int
+	PageSize *int
+}
+
+func (p ListParticipantsParams) query() url.Values {
+	v := url.Values{}
+	setBoolP(v, "Muted", p.Muted)
+	setBoolP(v, "Hold", p.Hold)
+	setBoolP(v, "Coaching", p.Coaching)
+	setIntP(v, "Page", p.Page)
+	setIntP(v, "PageSize", p.PageSize)
+	return v
+}
+
 // List returns all conferences for this account. GET /Conferences.
-func (s *ConferencesService) List(ctx context.Context) (*ConferenceList, error) {
+func (s *ConferencesService) List(ctx context.Context, params ListConferencesParams) (*ConferenceList, error) {
 	var out ConferenceList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Conferences"),
+		query:  params.query(),
 	}, &out)
 	if err != nil {
 		return nil, err
@@ -129,11 +170,12 @@ func (s *ConferencesService) End(ctx context.Context, conferenceSid string, para
 
 // ListParticipants returns the legs currently in a conference.
 // GET /Conferences/{sid}/Participants.
-func (s *ConferencesService) ListParticipants(ctx context.Context, conferenceSid string) (*ParticipantList, error) {
+func (s *ConferencesService) ListParticipants(ctx context.Context, conferenceSid string, params ListParticipantsParams) (*ParticipantList, error) {
 	var out ParticipantList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Conferences", conferenceSid, "Participants"),
+		query:  params.query(),
 	}, &out)
 	if err != nil {
 		return nil, err
