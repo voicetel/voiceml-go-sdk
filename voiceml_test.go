@@ -135,8 +135,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.6.3" {
-		t.Fatalf("Version: want 0.6.3, got %q", voiceml.Version)
+	if voiceml.Version != "0.6.4" {
+		t.Fatalf("Version: want 0.6.4, got %q", voiceml.Version)
 	}
 
 	cases := []struct {
@@ -1130,5 +1130,23 @@ func TestQueuesCreateMaxSizeZero(t *testing.T) {
 	body := string(rec.requests[0].Body)
 	if !strings.Contains(body, "MaxSize=0") {
 		t.Fatalf("body: want MaxSize=0, got %q", body)
+	}
+}
+
+// 32. Calls.List sends PageToken (spec v0.6.4).
+func TestCallsListPageToken(t *testing.T) {
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{"calls": []any{}, "page": 0, "page_size": 50}),
+	}, nil)
+	defer cleanup()
+
+	_, err := c.Calls.List(context.Background(), voiceml.ListCallsParams{
+		PageToken: "cursor-abc123",
+	})
+	if err != nil {
+		t.Fatalf("Calls.List: %v", err)
+	}
+	if !strings.Contains(rec.requests[0].Query, "PageToken=cursor-abc123") {
+		t.Fatalf("query: want PageToken, got %q", rec.requests[0].Query)
 	}
 }

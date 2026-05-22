@@ -68,6 +68,7 @@ type ListApplicationsParams struct {
 	FriendlyName string
 	Page         *int
 	PageSize     *int
+	PageToken    string
 }
 
 func (p ListApplicationsParams) query() url.Values {
@@ -75,6 +76,7 @@ func (p ListApplicationsParams) query() url.Values {
 	setString(v, "FriendlyName", p.FriendlyName)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
 	return v
 }
 

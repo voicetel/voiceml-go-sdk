@@ -181,6 +181,7 @@ type ListCallsParams struct {
 	StartTimeLte  string
 	Page          *int
 	PageSize      *int
+	PageToken     string
 }
 
 func (p ListCallsParams) query() url.Values {
@@ -199,19 +200,22 @@ func (p ListCallsParams) query() url.Values {
 	setString(v, "StartTime<=", p.StartTimeLte)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
 	return v
 }
 
-// ListPageParams are shared Page / PageSize query params for stub list endpoints.
+// ListPageParams are shared Page / PageSize / PageToken query params for list endpoints.
 type ListPageParams struct {
-	Page     *int
-	PageSize *int
+	Page      *int
+	PageSize  *int
+	PageToken string
 }
 
 func (p ListPageParams) query() url.Values {
 	v := url.Values{}
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
 	return v
 }
 

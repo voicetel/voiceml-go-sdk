@@ -94,6 +94,7 @@ type ListIncomingPhoneNumbersParams struct {
 	PhoneNumber string
 	Page        *int
 	PageSize    *int
+	PageToken   string
 }
 
 func (p ListIncomingPhoneNumbersParams) query() url.Values {
@@ -101,6 +102,7 @@ func (p ListIncomingPhoneNumbersParams) query() url.Values {
 	setString(v, "PhoneNumber", p.PhoneNumber)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
 	return v
 }
 

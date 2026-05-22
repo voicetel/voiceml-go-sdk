@@ -91,6 +91,7 @@ type ListConferencesParams struct {
 	Status       string
 	Page         *int
 	PageSize     *int
+	PageToken    string
 }
 
 func (p ListConferencesParams) query() url.Values {
@@ -99,6 +100,7 @@ func (p ListConferencesParams) query() url.Values {
 	setString(v, "Status", p.Status)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
 	return v
 }
 
@@ -108,8 +110,9 @@ type ListParticipantsParams struct {
 	Muted    *bool
 	Hold     *bool
 	Coaching *bool
-	Page     *int
-	PageSize *int
+	Page      *int
+	PageSize  *int
+	PageToken string
 }
 
 func (p ListParticipantsParams) query() url.Values {
@@ -119,6 +122,7 @@ func (p ListParticipantsParams) query() url.Values {
 	setBoolP(v, "Coaching", p.Coaching)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
 	return v
 }
 
@@ -223,11 +227,12 @@ func (s *ConferencesService) KickParticipant(ctx context.Context, conferenceSid,
 
 // ListRecordings returns recordings made of this conference.
 // GET /Conferences/{sid}/Recordings.
-func (s *ConferencesService) ListRecordings(ctx context.Context, conferenceSid string) (*RecordingList, error) {
+func (s *ConferencesService) ListRecordings(ctx context.Context, conferenceSid string, params ListCallRecordingsParams) (*RecordingList, error) {
 	var out RecordingList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Conferences", conferenceSid, "Recordings"),
+		query:  params.query(),
 	}, &out)
 	if err != nil {
 		return nil, err

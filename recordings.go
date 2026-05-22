@@ -91,6 +91,7 @@ type ListRecordingsParams struct {
 	ConferenceSid string
 	Page          *int
 	PageSize      *int
+	PageToken     string
 }
 
 func (p ListRecordingsParams) query() url.Values {
@@ -102,6 +103,7 @@ func (p ListRecordingsParams) query() url.Values {
 	setString(v, "ConferenceSid", p.ConferenceSid)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
 	return v
 }
 
@@ -112,6 +114,7 @@ type ListCallRecordingsParams struct {
 	DateCreatedGt string
 	Page          *int
 	PageSize      *int
+	PageToken     string
 }
 
 func (p ListCallRecordingsParams) query() url.Values {
@@ -121,6 +124,7 @@ func (p ListCallRecordingsParams) query() url.Values {
 	setString(v, "DateCreated>", p.DateCreatedGt)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
 	return v
 }
 
