@@ -238,7 +238,7 @@ func decodeError(status int, body []byte) error {
 	var moreInfo string
 
 	if len(body) > 0 {
-		// Twilio-shape: {"code": <int|string>, "message": <string>, "more_info": <string>, ...}
+		// Twilio-compatible: {"code": <int|string>, "message": <string>, "more_info": <string>, ...}
 		var parsed map[string]any
 		if err := json.Unmarshal(body, &parsed); err == nil {
 			if raw, ok := parsed["code"]; ok {

@@ -8,7 +8,7 @@ import (
 // QueuesService is the /Queues resource group plus queue members.
 type QueuesService struct{ c *Client }
 
-// Queue is a Twilio-shape Queue resource.
+// Queue is a Twilio-compatible Queue resource.
 type Queue struct {
 	Sid             string `json:"sid"`
 	AccountSid      string `json:"account_sid"`

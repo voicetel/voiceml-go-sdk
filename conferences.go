@@ -9,7 +9,7 @@ import (
 // and conference-scoped recordings.
 type ConferencesService struct{ c *Client }
 
-// Conference is a Twilio-shape Conference resource.
+// Conference is a Twilio-compatible Conference resource.
 type Conference struct {
 	Sid                     string            `json:"sid"`
 	AccountSid              string            `json:"account_sid"`
@@ -87,20 +87,62 @@ func (p UpdateParticipantParams) form() url.Values {
 
 // ListConferencesParams are the filter / pagination query params for GET /Conferences.
 type ListConferencesParams struct {
-	FriendlyName string
-	Status       string
-	Page         *int
-	PageSize     *int
-	PageToken    string
+	FriendlyName   string
+	Status         string
+	DateCreated    string
+	DateCreatedLt  string
+	DateCreatedGt  string
+	DateUpdated    string
+	DateUpdatedLt  string
+	DateUpdatedGt  string
+	Page           *int
+	PageSize       *int
+	PageToken      string
 }
 
 func (p ListConferencesParams) query() url.Values {
 	v := url.Values{}
 	setString(v, "FriendlyName", p.FriendlyName)
 	setString(v, "Status", p.Status)
+	setString(v, "DateCreated", p.DateCreated)
+	setString(v, "DateCreated<", p.DateCreatedLt)
+	setString(v, "DateCreated>", p.DateCreatedGt)
+	setString(v, "DateUpdated", p.DateUpdated)
+	setString(v, "DateUpdated<", p.DateUpdatedLt)
+	setString(v, "DateUpdated>", p.DateUpdatedGt)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
 	setString(v, "PageToken", p.PageToken)
+	return v
+}
+
+// CreateParticipantParams is the body for POST
+// /Conferences/{sid}/Participants. From and To are required.
+type CreateParticipantParams struct {
+	From                   string  `form:"From"`
+	To                     string  `form:"To"`
+	Label                  *string `form:"Label"`
+	Muted                  *bool   `form:"Muted"`
+	StartConferenceOnEnter *bool   `form:"StartConferenceOnEnter"`
+	EndConferenceOnExit    *bool   `form:"EndConferenceOnExit"`
+	Timeout                *int    `form:"Timeout"`
+	StatusCallback         *string `form:"StatusCallback"`
+	StatusCallbackMethod   *string `form:"StatusCallbackMethod"`
+	StatusCallbackEvent    *string `form:"StatusCallbackEvent"`
+}
+
+func (p CreateParticipantParams) form() url.Values {
+	v := url.Values{}
+	v.Set("From", p.From)
+	v.Set("To", p.To)
+	setStringP(v, "Label", p.Label)
+	setBoolP(v, "Muted", p.Muted)
+	setBoolP(v, "StartConferenceOnEnter", p.StartConferenceOnEnter)
+	setBoolP(v, "EndConferenceOnExit", p.EndConferenceOnExit)
+	setIntP(v, "Timeout", p.Timeout)
+	setStringP(v, "StatusCallback", p.StatusCallback)
+	setStringP(v, "StatusCallbackMethod", p.StatusCallbackMethod)
+	setStringP(v, "StatusCallbackEvent", p.StatusCallbackEvent)
 	return v
 }
 
@@ -165,6 +207,21 @@ func (s *ConferencesService) End(ctx context.Context, conferenceSid string, para
 		method: "POST",
 		path:   s.c.pathf("Conferences", conferenceSid),
 		form:   body.form(),
+	}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// CreateParticipant dials a leg into a conference.
+// POST /Conferences/{sid}/Participants.
+func (s *ConferencesService) CreateParticipant(ctx context.Context, conferenceSid string, params CreateParticipantParams) (*Participant, error) {
+	var out Participant
+	err := s.c.t.do(ctx, requestOpts{
+		method: "POST",
+		path:   s.c.pathf("Conferences", conferenceSid, "Participants"),
+		form:   params.form(),
 	}, &out)
 	if err != nil {
 		return nil, err
@@ -238,4 +295,42 @@ func (s *ConferencesService) ListRecordings(ctx context.Context, conferenceSid s
 		return nil, err
 	}
 	return &out, nil
+}
+
+// GetRecording fetches metadata for a recording on this conference.
+// GET /Conferences/{sid}/Recordings/{rsid}.
+func (s *ConferencesService) GetRecording(ctx context.Context, conferenceSid, recordingSid string) (*Recording, error) {
+	var out Recording
+	err := s.c.t.do(ctx, requestOpts{
+		method: "GET",
+		path:   s.c.pathf("Conferences", conferenceSid, "Recordings", recordingSid),
+	}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UpdateRecording changes the state of a conference-scoped recording.
+// POST /Conferences/{sid}/Recordings/{rsid}.
+func (s *ConferencesService) UpdateRecording(ctx context.Context, conferenceSid, recordingSid string, params UpdateRecordingParams) (*Recording, error) {
+	var out Recording
+	err := s.c.t.do(ctx, requestOpts{
+		method: "POST",
+		path:   s.c.pathf("Conferences", conferenceSid, "Recordings", recordingSid),
+		form:   params.form(),
+	}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteRecording removes a conference-scoped recording.
+// DELETE /Conferences/{sid}/Recordings/{rsid}.
+func (s *ConferencesService) DeleteRecording(ctx context.Context, conferenceSid, recordingSid string) error {
+	return s.c.t.do(ctx, requestOpts{
+		method: "DELETE",
+		path:   s.c.pathf("Conferences", conferenceSid, "Recordings", recordingSid),
+	}, nil)
 }

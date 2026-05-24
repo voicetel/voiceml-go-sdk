@@ -1,5 +1,5 @@
 // Package voiceml is the official Go SDK for the VoiceML REST API — VoiceTel's
-// outbound voice + AMD service with a Twilio-shaped REST surface.
+// outbound voice + AMD service with a Twilio-compatible REST surface.
 //
 // The wire format, authentication model, error codes, and pagination envelope
 // all match Twilio's documented Programmable Voice surface. If you've used
@@ -115,6 +115,9 @@ type Client struct {
 
 	// IncomingPhoneNumbers — CRUD on DIDs assigned to the authenticated tenant.
 	IncomingPhoneNumbers *IncomingPhoneNumbersService
+
+	// Notifications — account-scoped compat stubs (always empty).
+	Notifications *NotificationsService
 }
 
 // NewClient constructs a *Client. Returns *ConfigurationError if AccountSid
@@ -184,6 +187,7 @@ func NewClient(opts ClientOptions) (*Client, error) {
 	c.Recordings = &RecordingsService{c: c}
 	c.Diagnostics = &DiagnosticsService{c: c}
 	c.IncomingPhoneNumbers = &IncomingPhoneNumbersService{c: c}
+	c.Notifications = &NotificationsService{c: c}
 	return c, nil
 }
 

@@ -1,6 +1,6 @@
 # voiceml-go-sdk
 
-Official Go SDK for the [VoiceML](https://voicetel.com/docs/api/v0.6/voiceml/) REST API — VoiceTel's outbound voice + AMD service with a Twilio-shaped REST surface.
+Official Go SDK for the [VoiceML](https://voicetel.com/docs/api/v0.6/voiceml/) REST API — VoiceTel's outbound voice + AMD service with a Twilio-compatible REST surface.
 
 Wire format, auth model (HTTP Basic with `AccountSid` as username, per-tenant API key as password), error codes, and pagination envelope all match Twilio's documented Programmable Voice surface. If you've used `twilio-go`, the patterns here will feel familiar.
 
@@ -94,7 +94,7 @@ if errors.Is(err, voiceml.ErrRateLimit) {
 | 5xx | `ErrServer` | `IsServer(err)` |
 | network | `ErrTransport` | — |
 
-The Twilio-shape body (`code`, `message`, `more_info`, `status`) is parsed into `apiErr.Code`, `apiErr.Message`, and `apiErr.MoreInfo`, with the raw response on `apiErr.Body`:
+The Twilio-compatible body (`code`, `message`, `more_info`, `status`) is parsed into `apiErr.Code`, `apiErr.Message`, and `apiErr.MoreInfo`, with the raw response on `apiErr.Body`:
 
 ```go
 var apiErr *voiceml.APIError
@@ -131,7 +131,7 @@ Method shapes (`c.Calls.Create(ctx, params)`, `c.Queues.List(ctx)`) follow the r
 
 ## Pagination
 
-List operations return a `*…List` struct with the Twilio-shape pagination envelope embedded (`Page`, `PageSize`, `Total`, `NextPageURI`, `PreviousPageURI`, …). For `/Calls`, the convenience method `Iterate` walks every page:
+List operations return a `*…List` struct with the Twilio-compatible pagination envelope embedded (`Page`, `PageSize`, `Total`, `NextPageURI`, `PreviousPageURI`, …). For `/Calls`, the convenience method `Iterate` walks every page:
 
 ```go
 all, err := c.Calls.Iterate(ctx, voiceml.ListCallsParams{Status: "completed"})

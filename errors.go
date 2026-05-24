@@ -42,7 +42,7 @@ var (
 
 // APIError is the single error type returned for non-2xx responses. The
 // HTTP status determines which sentinel (ErrNotFound, ErrRateLimit, ...) it
-// wraps; the parsed Twilio-shape body populates Code, Message, and MoreInfo.
+// wraps; the parsed Twilio-compatible body populates Code, Message, and MoreInfo.
 //
 // Inspect:
 //   - StatusCode  HTTP status code from the server.

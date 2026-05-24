@@ -9,7 +9,7 @@ import (
 // Per-call recording start/stop/list lives on CallsService.
 type RecordingsService struct{ c *Client }
 
-// Recording is a Twilio-shape Recording resource. Fields populated depend on
+// Recording is a Twilio-compatible Recording resource. Fields populated depend on
 // the endpoint that produced it — call-scoped and conference-scoped lists may
 // omit pagination fields.
 type Recording struct {
@@ -82,16 +82,28 @@ func (p UpdateRecordingParams) form() url.Values {
 	return v
 }
 
+// GetRecordingParams are optional query params for GET /Recordings/{sid}.
+type GetRecordingParams struct {
+	IncludeSoftDeleted *bool
+}
+
+func (p GetRecordingParams) query() url.Values {
+	v := url.Values{}
+	setBoolP(v, "IncludeSoftDeleted", p.IncludeSoftDeleted)
+	return v
+}
+
 // ListRecordingsParams are the query params for GET /Recordings (account-scoped).
 type ListRecordingsParams struct {
-	DateCreated   string
-	DateCreatedLt string
-	DateCreatedGt string
-	CallSid       string
-	ConferenceSid string
-	Page          *int
-	PageSize      *int
-	PageToken     string
+	DateCreated        string
+	DateCreatedLt      string
+	DateCreatedGt      string
+	CallSid            string
+	ConferenceSid      string
+	IncludeSoftDeleted *bool
+	Page               *int
+	PageSize           *int
+	PageToken          string
 }
 
 func (p ListRecordingsParams) query() url.Values {
@@ -101,6 +113,7 @@ func (p ListRecordingsParams) query() url.Values {
 	setString(v, "DateCreated>", p.DateCreatedGt)
 	setString(v, "CallSid", p.CallSid)
 	setString(v, "ConferenceSid", p.ConferenceSid)
+	setBoolP(v, "IncludeSoftDeleted", p.IncludeSoftDeleted)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
 	setString(v, "PageToken", p.PageToken)
@@ -143,11 +156,16 @@ func (s *RecordingsService) List(ctx context.Context, params ListRecordingsParam
 }
 
 // Get fetches a recording's metadata. GET /Recordings/{sid}.
-func (s *RecordingsService) Get(ctx context.Context, recordingSid string) (*Recording, error) {
+func (s *RecordingsService) Get(ctx context.Context, recordingSid string, params *GetRecordingParams) (*Recording, error) {
+	var q url.Values
+	if params != nil {
+		q = params.query()
+	}
 	var out Recording
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Recordings", recordingSid),
+		query:  q,
 	}, &out)
 	if err != nil {
 		return nil, err

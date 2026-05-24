@@ -135,8 +135,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.6.4" {
-		t.Fatalf("Version: want 0.6.4, got %q", voiceml.Version)
+	if voiceml.Version != "0.6.6" {
+		t.Fatalf("Version: want 0.6.6, got %q", voiceml.Version)
 	}
 
 	cases := []struct {
@@ -243,7 +243,7 @@ func TestCallsCreate(t *testing.T) {
 	}
 }
 
-// 4. Calls.List — Twilio-shape query params including StartTime>= / <=.
+// 4. Calls.List — Twilio-compatible query params including StartTime>= / <=.
 func TestCallsListQueryParams(t *testing.T) {
 	c, rec, cleanup := newClient(t, []handlerStep{
 		jsonStep(200, map[string]any{
@@ -926,7 +926,7 @@ func TestRecordingMediaURLRoundTrip(t *testing.T) {
 	}, nil)
 	defer cleanup()
 
-	rec, err := c.Recordings.Get(context.Background(), rSid)
+	rec, err := c.Recordings.Get(context.Background(), rSid, nil)
 	if err != nil {
 		t.Fatalf("Recordings.Get: %v", err)
 	}
@@ -1027,7 +1027,7 @@ func TestRecordingErrorCodeAndSource(t *testing.T) {
 	}, nil)
 	defer cleanup()
 
-	rec, err := c.Recordings.Get(context.Background(), rSid)
+	rec, err := c.Recordings.Get(context.Background(), rSid, nil)
 	if err != nil {
 		t.Fatalf("Recordings.Get: %v", err)
 	}
@@ -1148,5 +1148,90 @@ func TestCallsListPageToken(t *testing.T) {
 	}
 	if !strings.Contains(rec.requests[0].Query, "PageToken=cursor-abc123") {
 		t.Fatalf("query: want PageToken, got %q", rec.requests[0].Query)
+	}
+}
+
+// 33. Conferences.CreateParticipant sends From/To (spec v0.6.6).
+func TestConferencesCreateParticipant(t *testing.T) {
+	confSid := "CF" + strings.Repeat("f", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(201, map[string]any{
+			"call_sid":       "CA" + strings.Repeat("f", 32),
+			"conference_sid": confSid,
+			"account_sid":    testAccountSid,
+			"status":         "queued",
+			"api_version":    "2010-04-01",
+			"uri":            "/x",
+		}),
+	}, nil)
+	defer cleanup()
+
+	_, err := c.Conferences.CreateParticipant(context.Background(), confSid, voiceml.CreateParticipantParams{
+		From: "+18005550000",
+		To:   "+18005551234",
+	})
+	if err != nil {
+		t.Fatalf("Conferences.CreateParticipant: %v", err)
+	}
+	body := string(rec.requests[0].Body)
+	for _, want := range []string{"From=%2B18005550000", "To=%2B18005551234"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("body %q missing %q", body, want)
+		}
+	}
+}
+
+// 34. Calls.ListNotifications sends Log and MessageDate filters (spec v0.6.6).
+func TestCallsListNotificationsFilters(t *testing.T) {
+	callSid := "CA" + strings.Repeat("f", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"notifications": []any{},
+			"page":          0,
+			"page_size":     50,
+			"total":         0,
+		}),
+	}, nil)
+	defer cleanup()
+
+	log := 1
+	_, err := c.Calls.ListNotifications(context.Background(), callSid, voiceml.ListNotificationsParams{
+		Log:           &log,
+		MessageDate:   "2026-05-01",
+		MessageDateLt: "2026-05-02",
+		MessageDateGt: "2026-04-30",
+	})
+	if err != nil {
+		t.Fatalf("Calls.ListNotifications: %v", err)
+	}
+	q := rec.requests[0].Query
+	for _, want := range []string{
+		"Log=1",
+		"MessageDate=2026-05-01",
+		"MessageDate%3C=2026-05-02",
+		"MessageDate%3E=2026-04-30",
+	} {
+		if !strings.Contains(q, want) {
+			t.Fatalf("query %q missing %q", q, want)
+		}
+	}
+}
+
+// 35. Recordings.List sends IncludeSoftDeleted (spec v0.6.6).
+func TestRecordingsListIncludeSoftDeleted(t *testing.T) {
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{"recordings": []any{}}),
+	}, nil)
+	defer cleanup()
+
+	include := true
+	_, err := c.Recordings.List(context.Background(), voiceml.ListRecordingsParams{
+		IncludeSoftDeleted: &include,
+	})
+	if err != nil {
+		t.Fatalf("Recordings.List: %v", err)
+	}
+	if !strings.Contains(rec.requests[0].Query, "IncludeSoftDeleted=true") {
+		t.Fatalf("query: want IncludeSoftDeleted, got %q", rec.requests[0].Query)
 	}
 }

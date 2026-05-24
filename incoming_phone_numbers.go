@@ -21,7 +21,7 @@ type IncomingPhoneNumberCapabilities struct {
 	Fax   bool `json:"fax"`
 }
 
-// IncomingPhoneNumber is a Twilio-shape IncomingPhoneNumber resource. `Sid`
+// IncomingPhoneNumber is a Twilio-compatible IncomingPhoneNumber resource. `Sid`
 // is the canonical PN-prefixed opaque identifier; `PhoneNumber` carries the
 // E.164 form. Nullable / often-empty Twilio-compat fields are exposed as
 // `*string` so callers can distinguish "server emitted empty string" from
@@ -208,6 +208,90 @@ func (s *IncomingPhoneNumbersService) Update(ctx context.Context, sid string, pa
 		return nil, err
 	}
 	return &out, nil
+}
+
+// ListTypedIncomingPhoneNumbersParams are query params for the type-specific
+// /IncomingPhoneNumbers/{Local,Mobile,TollFree} list endpoints.
+type ListTypedIncomingPhoneNumbersParams struct {
+	PhoneNumber   string
+	FriendlyName  string
+	Beta          *bool
+	Origin        string
+	Page          *int
+	PageSize      *int
+	PageToken     string
+}
+
+func (p ListTypedIncomingPhoneNumbersParams) query() url.Values {
+	v := url.Values{}
+	setString(v, "PhoneNumber", p.PhoneNumber)
+	setString(v, "FriendlyName", p.FriendlyName)
+	setBoolP(v, "Beta", p.Beta)
+	setString(v, "Origin", p.Origin)
+	setIntP(v, "Page", p.Page)
+	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
+	return v
+}
+
+func (s *IncomingPhoneNumbersService) listTyped(ctx context.Context, kind string, params *ListTypedIncomingPhoneNumbersParams) (*IncomingPhoneNumbersList, error) {
+	var q url.Values
+	if params != nil {
+		q = params.query()
+	}
+	var out IncomingPhoneNumbersList
+	err := s.c.t.do(ctx, requestOpts{
+		method: "GET",
+		path:   s.c.pathf("IncomingPhoneNumbers", kind),
+		query:  q,
+	}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (s *IncomingPhoneNumbersService) createTyped(ctx context.Context, kind string, params CreateIncomingPhoneNumberParams) (*IncomingPhoneNumber, error) {
+	var out IncomingPhoneNumber
+	err := s.c.t.do(ctx, requestOpts{
+		method: "POST",
+		path:   s.c.pathf("IncomingPhoneNumbers", kind),
+		form:   params.form(),
+	}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListLocal returns local DIDs. GET /IncomingPhoneNumbers/Local.
+func (s *IncomingPhoneNumbersService) ListLocal(ctx context.Context, params *ListTypedIncomingPhoneNumbersParams) (*IncomingPhoneNumbersList, error) {
+	return s.listTyped(ctx, "Local", params)
+}
+
+// CreateLocal assigns a local DID. POST /IncomingPhoneNumbers/Local.
+func (s *IncomingPhoneNumbersService) CreateLocal(ctx context.Context, params CreateIncomingPhoneNumberParams) (*IncomingPhoneNumber, error) {
+	return s.createTyped(ctx, "Local", params)
+}
+
+// ListMobile returns mobile DIDs. GET /IncomingPhoneNumbers/Mobile.
+func (s *IncomingPhoneNumbersService) ListMobile(ctx context.Context, params *ListTypedIncomingPhoneNumbersParams) (*IncomingPhoneNumbersList, error) {
+	return s.listTyped(ctx, "Mobile", params)
+}
+
+// CreateMobile assigns a mobile DID. POST /IncomingPhoneNumbers/Mobile.
+func (s *IncomingPhoneNumbersService) CreateMobile(ctx context.Context, params CreateIncomingPhoneNumberParams) (*IncomingPhoneNumber, error) {
+	return s.createTyped(ctx, "Mobile", params)
+}
+
+// ListTollFree returns toll-free DIDs. GET /IncomingPhoneNumbers/TollFree.
+func (s *IncomingPhoneNumbersService) ListTollFree(ctx context.Context, params *ListTypedIncomingPhoneNumbersParams) (*IncomingPhoneNumbersList, error) {
+	return s.listTyped(ctx, "TollFree", params)
+}
+
+// CreateTollFree assigns a toll-free DID. POST /IncomingPhoneNumbers/TollFree.
+func (s *IncomingPhoneNumbersService) CreateTollFree(ctx context.Context, params CreateIncomingPhoneNumberParams) (*IncomingPhoneNumber, error) {
+	return s.createTyped(ctx, "TollFree", params)
 }
 
 // Delete releases a DID from the authenticated tenant.

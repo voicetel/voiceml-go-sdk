@@ -11,7 +11,7 @@ import (
 // UserDefinedMessages).
 type CallsService struct{ c *Client }
 
-// Call is a Twilio-shape Call resource.
+// Call is a Twilio-compatible Call resource.
 type Call struct {
 	Sid             string            `json:"sid"`
 	AccountSid      string            `json:"account_sid"`
@@ -742,7 +742,7 @@ type EventsList struct {
 
 // ListNotifications hits the compat stub at /Calls/{sid}/Notifications.
 // Always returns an empty list when the call exists.
-func (s *CallsService) ListNotifications(ctx context.Context, callSid string, params ListPageParams) (*NotificationsList, error) {
+func (s *CallsService) ListNotifications(ctx context.Context, callSid string, params ListNotificationsParams) (*NotificationsList, error) {
 	var out NotificationsList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
@@ -753,6 +753,19 @@ func (s *CallsService) ListNotifications(ctx context.Context, callSid string, pa
 		return nil, err
 	}
 	return &out, nil
+}
+
+// GetNotification fetches a per-call notification. Always 404 today (compat stub).
+func (s *CallsService) GetNotification(ctx context.Context, callSid, notificationSid string) (map[string]any, error) {
+	var out map[string]any
+	err := s.c.t.do(ctx, requestOpts{
+		method: "GET",
+		path:   s.c.pathf("Calls", callSid, "Notifications", notificationSid),
+	}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // ListEvents hits the compat stub at /Calls/{sid}/Events. Always returns an

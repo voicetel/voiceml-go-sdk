@@ -21,7 +21,7 @@ const (
 	TrackBoth     TrackSelector = "both_tracks"
 )
 
-// Page is the Twilio-shape pagination envelope embedded in every list
+// Page is the Twilio-compatible pagination envelope embedded in every list
 // response. The concrete resource list field (Calls, Conferences, ...) is
 // declared in its own list type alongside this embed.
 type Page struct {
@@ -37,7 +37,7 @@ type Page struct {
 	URI             string `json:"uri,omitempty"`
 }
 
-// ErrorBody is the Twilio-shape JSON payload the server returns for non-2xx
+// ErrorBody is the Twilio-compatible JSON payload the server returns for non-2xx
 // responses. Decoded automatically into *APIError.Code / .Message — exposed
 // here for callers that want to re-parse APIError.Body themselves.
 type ErrorBody struct {
