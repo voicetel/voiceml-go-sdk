@@ -130,6 +130,27 @@ func (s *QueuesService) List(ctx context.Context, params ListPageParams) (*Queue
 	return &out, nil
 }
 
+// Iterate walks every page of /Queues and returns the collected slice.
+func (s *QueuesService) Iterate(ctx context.Context, params ListPageParams) ([]Queue, error) {
+	var out []Queue
+	page := 0
+	if params.Page != nil {
+		page = *params.Page
+	}
+	for {
+		params.Page = &page
+		chunk, err := s.List(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, chunk.Queues...)
+		if chunk.NextPageURI == "" || len(chunk.Queues) == 0 {
+			return out, nil
+		}
+		page++
+	}
+}
+
 // Get fetches a queue by SID. GET /Queues/{sid}.
 func (s *QueuesService) Get(ctx context.Context, queueSid string) (*Queue, error) {
 	var out Queue

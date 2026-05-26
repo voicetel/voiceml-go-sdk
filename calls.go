@@ -23,9 +23,9 @@ type Call struct {
 	ParentCallSid   string            `json:"parent_call_sid,omitempty"`
 	CallerName      string            `json:"caller_name,omitempty"`
 	ForwardedFrom   string            `json:"forwarded_from,omitempty"`
-	Status          string            `json:"status"`
-	Direction       string            `json:"direction"`
-	AnsweredBy      string            `json:"answered_by,omitempty"`
+	Status          CallStatus        `json:"status"`
+	Direction       CallDirection     `json:"direction"`
+	AnsweredBy      AnsweredBy        `json:"answered_by,omitempty"`
 	StartTime       string            `json:"start_time,omitempty"`
 	EndTime         string            `json:"end_time,omitempty"`
 	Duration        string            `json:"duration,omitempty"`

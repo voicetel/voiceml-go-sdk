@@ -14,7 +14,7 @@ type Conference struct {
 	Sid                     string            `json:"sid"`
 	AccountSid              string            `json:"account_sid"`
 	FriendlyName            string            `json:"friendly_name"`
-	Status                  string            `json:"status"`
+	Status                  ConferenceStatus  `json:"status"`
 	Region                  string            `json:"region,omitempty"`
 	APIVersion              string            `json:"api_version"`
 	URI                     string            `json:"uri"`
@@ -44,8 +44,8 @@ type Participant struct {
 	QueueTime              string `json:"queue_time"`
 	StartConferenceOnEnter bool   `json:"start_conference_on_enter"`
 	EndConferenceOnExit    bool   `json:"end_conference_on_exit"`
-	Status                 string `json:"status"`
-	Label                  string `json:"label,omitempty"`
+	Status                 ParticipantStatus `json:"status"`
+	Label                  string            `json:"label,omitempty"`
 	APIVersion             string `json:"api_version"`
 	URI                    string `json:"uri"`
 	DateCreated            string `json:"date_created,omitempty"`
@@ -180,6 +180,27 @@ func (s *ConferencesService) List(ctx context.Context, params ListConferencesPar
 		return nil, err
 	}
 	return &out, nil
+}
+
+// Iterate walks every page of /Conferences and returns the collected slice.
+func (s *ConferencesService) Iterate(ctx context.Context, params ListConferencesParams) ([]Conference, error) {
+	var out []Conference
+	page := 0
+	if params.Page != nil {
+		page = *params.Page
+	}
+	for {
+		params.Page = &page
+		chunk, err := s.List(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, chunk.Conferences...)
+		if chunk.NextPageURI == "" || len(chunk.Conferences) == 0 {
+			return out, nil
+		}
+		page++
+	}
 }
 
 // Get fetches a conference by SID. GET /Conferences/{sid}.

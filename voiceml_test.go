@@ -1235,3 +1235,252 @@ func TestRecordingsListIncludeSoftDeleted(t *testing.T) {
 		t.Fatalf("query: want IncludeSoftDeleted, got %q", rec.requests[0].Query)
 	}
 }
+
+// --- Iterate (pagination) tests ---
+
+// 36. Calls.Iterate — two pages (2 + 1 calls), asserts 3 total and Page=0 / Page=1.
+func TestIterateCallsTwoPages(t *testing.T) {
+	callsBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Calls.json", testAccountSid)
+
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"calls": []any{
+				callPayload("CA" + strings.Repeat("1", 32)),
+				callPayload("CA" + strings.Repeat("2", 32)),
+			},
+			"page":          0,
+			"page_size":     50,
+			"next_page_uri": callsBasePath + "?Page=1",
+			"uri":           callsBasePath + "?Page=0",
+		}),
+		jsonStep(200, map[string]any{
+			"calls": []any{
+				callPayload("CA" + strings.Repeat("3", 32)),
+			},
+			"page":          1,
+			"page_size":     50,
+			"next_page_uri": "",
+			"uri":           callsBasePath + "?Page=1",
+		}),
+	}, nil)
+	defer cleanup()
+
+	calls, err := c.Calls.Iterate(context.Background(), voiceml.ListCallsParams{})
+	if err != nil {
+		t.Fatalf("Calls.Iterate: %v", err)
+	}
+	if len(calls) != 3 {
+		t.Fatalf("len(calls): want 3, got %d", len(calls))
+	}
+	if len(rec.requests) != 2 {
+		t.Fatalf("requests: want 2, got %d", len(rec.requests))
+	}
+	if !strings.Contains(rec.requests[0].Query, "Page=0") {
+		t.Fatalf("request 0 query: want Page=0, got %q", rec.requests[0].Query)
+	}
+	if !strings.Contains(rec.requests[1].Query, "Page=1") {
+		t.Fatalf("request 1 query: want Page=1, got %q", rec.requests[1].Query)
+	}
+}
+
+// 37. Conferences.Iterate — two pages (2 + 1 conferences), asserts 3 total.
+func TestIterateConferencesTwoPages(t *testing.T) {
+	confBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Conferences.json", testAccountSid)
+
+	confPayload := func(sid string) map[string]any {
+		return map[string]any{
+			"sid":           sid,
+			"account_sid":   testAccountSid,
+			"friendly_name": "room-" + sid[:6],
+			"status":        "in-progress",
+			"api_version":   "2010-04-01",
+			"uri":           fmt.Sprintf("/2010-04-01/Accounts/%s/Conferences/%s.json", testAccountSid, sid),
+		}
+	}
+
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"conferences": []any{
+				confPayload("CF" + strings.Repeat("1", 32)),
+				confPayload("CF" + strings.Repeat("2", 32)),
+			},
+			"page":          0,
+			"page_size":     50,
+			"next_page_uri": confBasePath + "?Page=1",
+			"uri":           confBasePath + "?Page=0",
+		}),
+		jsonStep(200, map[string]any{
+			"conferences": []any{
+				confPayload("CF" + strings.Repeat("3", 32)),
+			},
+			"page":          1,
+			"page_size":     50,
+			"next_page_uri": "",
+			"uri":           confBasePath + "?Page=1",
+		}),
+	}, nil)
+	defer cleanup()
+
+	confs, err := c.Conferences.Iterate(context.Background(), voiceml.ListConferencesParams{})
+	if err != nil {
+		t.Fatalf("Conferences.Iterate: %v", err)
+	}
+	if len(confs) != 3 {
+		t.Fatalf("len(confs): want 3, got %d", len(confs))
+	}
+	if len(rec.requests) != 2 {
+		t.Fatalf("requests: want 2, got %d", len(rec.requests))
+	}
+	if !strings.Contains(rec.requests[0].Query, "Page=0") {
+		t.Fatalf("request 0 query: want Page=0, got %q", rec.requests[0].Query)
+	}
+	if !strings.Contains(rec.requests[1].Query, "Page=1") {
+		t.Fatalf("request 1 query: want Page=1, got %q", rec.requests[1].Query)
+	}
+}
+
+// 38. Recordings.Iterate — two pages (2 + 1 recordings). RecordingList has its
+// own fields (does not embed Page), so next_page_uri is at the top level.
+func TestIterateRecordingsTwoPages(t *testing.T) {
+	recsBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Recordings.json", testAccountSid)
+
+	recPayload := func(sid string) map[string]any {
+		return map[string]any{
+			"sid":         sid,
+			"account_sid": testAccountSid,
+			"call_sid":    "CA" + strings.Repeat("0", 32),
+			"status":      "completed",
+			"api_version": "2010-04-01",
+			"uri":         fmt.Sprintf("/2010-04-01/Accounts/%s/Recordings/%s.json", testAccountSid, sid),
+		}
+	}
+
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"recordings": []any{
+				recPayload("RE" + strings.Repeat("1", 32)),
+				recPayload("RE" + strings.Repeat("2", 32)),
+			},
+			"page":          0,
+			"page_size":     50,
+			"next_page_uri": recsBasePath + "?Page=1",
+			"uri":           recsBasePath + "?Page=0",
+		}),
+		jsonStep(200, map[string]any{
+			"recordings": []any{
+				recPayload("RE" + strings.Repeat("3", 32)),
+			},
+			"page":          1,
+			"page_size":     50,
+			"next_page_uri": "",
+			"uri":           recsBasePath + "?Page=1",
+		}),
+	}, nil)
+	defer cleanup()
+
+	recs, err := c.Recordings.Iterate(context.Background(), voiceml.ListRecordingsParams{})
+	if err != nil {
+		t.Fatalf("Recordings.Iterate: %v", err)
+	}
+	if len(recs) != 3 {
+		t.Fatalf("len(recs): want 3, got %d", len(recs))
+	}
+	if len(rec.requests) != 2 {
+		t.Fatalf("requests: want 2, got %d", len(rec.requests))
+	}
+	if !strings.Contains(rec.requests[0].Query, "Page=0") {
+		t.Fatalf("request 0 query: want Page=0, got %q", rec.requests[0].Query)
+	}
+	if !strings.Contains(rec.requests[1].Query, "Page=1") {
+		t.Fatalf("request 1 query: want Page=1, got %q", rec.requests[1].Query)
+	}
+}
+
+// 39. Queues.Iterate — two pages (2 + 1 queues), asserts 3 total.
+func TestIterateQueuesTwoPages(t *testing.T) {
+	queuesBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Queues.json", testAccountSid)
+
+	queuePayload := func(sid string) map[string]any {
+		return map[string]any{
+			"sid":               sid,
+			"account_sid":       testAccountSid,
+			"friendly_name":     "q-" + sid[:6],
+			"current_size":      0,
+			"max_size":          100,
+			"average_wait_time": 0,
+			"date_created":      "Mon, 19 May 2026 12:00:00 +0000",
+			"date_updated":      "Mon, 19 May 2026 12:00:00 +0000",
+			"uri":               fmt.Sprintf("/2010-04-01/Accounts/%s/Queues/%s.json", testAccountSid, sid),
+		}
+	}
+
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"queues": []any{
+				queuePayload("QU" + strings.Repeat("1", 32)),
+				queuePayload("QU" + strings.Repeat("2", 32)),
+			},
+			"page":          0,
+			"page_size":     50,
+			"next_page_uri": queuesBasePath + "?Page=1",
+			"uri":           queuesBasePath + "?Page=0",
+		}),
+		jsonStep(200, map[string]any{
+			"queues": []any{
+				queuePayload("QU" + strings.Repeat("3", 32)),
+			},
+			"page":          1,
+			"page_size":     50,
+			"next_page_uri": "",
+			"uri":           queuesBasePath + "?Page=1",
+		}),
+	}, nil)
+	defer cleanup()
+
+	queues, err := c.Queues.Iterate(context.Background(), voiceml.ListPageParams{})
+	if err != nil {
+		t.Fatalf("Queues.Iterate: %v", err)
+	}
+	if len(queues) != 3 {
+		t.Fatalf("len(queues): want 3, got %d", len(queues))
+	}
+	if len(rec.requests) != 2 {
+		t.Fatalf("requests: want 2, got %d", len(rec.requests))
+	}
+	if !strings.Contains(rec.requests[0].Query, "Page=0") {
+		t.Fatalf("request 0 query: want Page=0, got %q", rec.requests[0].Query)
+	}
+	if !strings.Contains(rec.requests[1].Query, "Page=1") {
+		t.Fatalf("request 1 query: want Page=1, got %q", rec.requests[1].Query)
+	}
+}
+
+// 40. Calls.Iterate — single page (empty NextPageURI), asserts only 1 request made.
+func TestIterateCallsSinglePage(t *testing.T) {
+	callsBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Calls.json", testAccountSid)
+
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"calls": []any{
+				callPayload("CA" + strings.Repeat("a", 32)),
+				callPayload("CA" + strings.Repeat("b", 32)),
+			},
+			"page":          0,
+			"page_size":     50,
+			"next_page_uri": "",
+			"uri":           callsBasePath + "?Page=0",
+		}),
+	}, nil)
+	defer cleanup()
+
+	calls, err := c.Calls.Iterate(context.Background(), voiceml.ListCallsParams{})
+	if err != nil {
+		t.Fatalf("Calls.Iterate: %v", err)
+	}
+	if len(calls) != 2 {
+		t.Fatalf("len(calls): want 2, got %d", len(calls))
+	}
+	if len(rec.requests) != 1 {
+		t.Fatalf("requests: want 1 (single page), got %d", len(rec.requests))
+	}
+}

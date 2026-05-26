@@ -17,8 +17,8 @@ type Recording struct {
 	AccountSid        string         `json:"account_sid"`
 	CallSid           string         `json:"call_sid"`
 	ConferenceSid     string         `json:"conference_sid,omitempty"`
-	Status            string         `json:"status"`
-	Source            string         `json:"source,omitempty"`
+	Status            RecordingStatus `json:"status"`
+	Source            RecordingSource `json:"source,omitempty"`
 	Channels          *int           `json:"channels,omitempty"`
 	Duration          string         `json:"duration,omitempty"`
 	APIVersion        string         `json:"api_version,omitempty"`
@@ -153,6 +153,27 @@ func (s *RecordingsService) List(ctx context.Context, params ListRecordingsParam
 		return nil, err
 	}
 	return &out, nil
+}
+
+// Iterate walks every page of /Recordings and returns the collected slice.
+func (s *RecordingsService) Iterate(ctx context.Context, params ListRecordingsParams) ([]Recording, error) {
+	var out []Recording
+	page := 0
+	if params.Page != nil {
+		page = *params.Page
+	}
+	for {
+		params.Page = &page
+		chunk, err := s.List(ctx, params)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, chunk.Recordings...)
+		if chunk.NextPageURI == "" || len(chunk.Recordings) == 0 {
+			return out, nil
+		}
+		page++
+	}
 }
 
 // Get fetches a recording's metadata. GET /Recordings/{sid}.

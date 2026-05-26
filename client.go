@@ -36,6 +36,7 @@
 package voiceml
 
 import (
+	"crypto/tls"
 	"net/http"
 	"strings"
 	"time"
@@ -163,7 +164,12 @@ func NewClient(opts ClientOptions) (*Client, error) {
 		if timeout == 0 {
 			timeout = DefaultTimeout
 		}
-		httpClient = &http.Client{Timeout: timeout}
+		tr := http.DefaultTransport.(*http.Transport).Clone()
+		if tr.TLSClientConfig == nil {
+			tr.TLSClientConfig = &tls.Config{}
+		}
+		tr.TLSClientConfig.ClientSessionCache = tls.NewLRUClientSessionCache(0)
+		httpClient = &http.Client{Timeout: timeout, Transport: tr}
 	}
 
 	t := &transport{
