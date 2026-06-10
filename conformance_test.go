@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	voiceml "github.com/voicetel/voiceml-go-sdk"
@@ -244,7 +243,3 @@ func itoa(n int) string {
 	return string(buf[i:])
 }
 
-// Compile-time guard that the corpus path resolves to a real directory
-// when set, so a typo'd env var surfaces as a build-like failure rather
-// than a silent skip.
-var _ = strings.EqualFold
