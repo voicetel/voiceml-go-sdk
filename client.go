@@ -119,6 +119,10 @@ type Client struct {
 
 	// Notifications — account-scoped compat stubs (always empty).
 	Notifications *NotificationsService
+
+	// Messages — Twilio-compatible SMS resource backed by VoiceTel's
+	// SDK 2.2 gateway. Outbound-only today.
+	Messages *MessagesService
 }
 
 // NewClient constructs a *Client. Returns *ConfigurationError if AccountSid
@@ -194,6 +198,7 @@ func NewClient(opts ClientOptions) (*Client, error) {
 	c.Diagnostics = &DiagnosticsService{c: c}
 	c.IncomingPhoneNumbers = &IncomingPhoneNumbersService{c: c}
 	c.Notifications = &NotificationsService{c: c}
+	c.Messages = &MessagesService{c: c}
 	return c, nil
 }
 

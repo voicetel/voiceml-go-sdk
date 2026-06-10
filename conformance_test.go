@@ -157,6 +157,11 @@ func pickConformanceTarget(opID string) any {
 	case "CreateUserDefinedMessage":
 		// No SDK model; surface as raw JSON.
 		return &map[string]any{}
+
+	case "CreateMessage", "FetchMessage", "UpdateMessage":
+		return &voiceml.Message{}
+	case "ListMessage":
+		return &voiceml.MessageList{}
 	}
 	return nil
 }
@@ -216,6 +221,17 @@ func assertKeyFields(t *testing.T, opID string, target any) {
 	case *voiceml.CallTranscription:
 		if v.Sid == "" {
 			t.Error("CallTranscription.Sid empty")
+		}
+	case *voiceml.Message:
+		if v.Sid == "" {
+			t.Error("Message.Sid empty")
+		}
+		if v.AccountSid == "" {
+			t.Error("Message.AccountSid empty")
+		}
+	case *voiceml.MessageList:
+		if v.URI == "" {
+			t.Error("MessageList.URI empty")
 		}
 	}
 }
