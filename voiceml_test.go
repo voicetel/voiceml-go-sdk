@@ -135,8 +135,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.6.6" {
-		t.Fatalf("Version: want 0.6.6, got %q", voiceml.Version)
+	if voiceml.Version != "0.7.0" {
+		t.Fatalf("Version: want 0.7.0, got %q", voiceml.Version)
 	}
 
 	cases := []struct {
@@ -1482,5 +1482,221 @@ func TestIterateCallsSinglePage(t *testing.T) {
 	}
 	if len(rec.requests) != 1 {
 		t.Fatalf("requests: want 1 (single page), got %d", len(rec.requests))
+	}
+}
+
+func messagePayload(sid string) map[string]any {
+	if sid == "" {
+		sid = "SM" + strings.Repeat("0", 32)
+	}
+	return map[string]any{
+		"sid":          sid,
+		"account_sid":  testAccountSid,
+		"api_version":  "2010-04-01",
+		"to":           "+18005551234",
+		"from":         "+18005550000",
+		"body":         "hello world",
+		"status":       "sent",
+		"num_segments": "1",
+		"num_media":    "0",
+		"direction":    "outbound-api",
+		"date_created": "Mon, 19 May 2026 12:00:00 +0000",
+		"date_updated": "Mon, 19 May 2026 12:00:00 +0000",
+		"uri":          fmt.Sprintf("/2010-04-01/Accounts/%s/Messages/%s.json", testAccountSid, sid),
+	}
+}
+
+// 41. Messages.Create — POST /Messages with To/Body/From.
+func TestMessagesCreate(t *testing.T) {
+	sid := "SM" + strings.Repeat("1", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(201, messagePayload(sid)),
+	}, nil)
+	defer cleanup()
+
+	msg, err := c.Messages.Create(context.Background(), voiceml.CreateMessageParams{
+		To:   "+18005551234",
+		Body: "hello world",
+		From: voiceml.String("+18005550000"),
+	})
+	if err != nil {
+		t.Fatalf("Messages.Create: %v", err)
+	}
+	if msg.Sid != sid {
+		t.Fatalf("sid: want %q, got %q", sid, msg.Sid)
+	}
+
+	req := rec.requests[0]
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/Messages.json", testAccountSid)
+	if req.Path != wantPath {
+		t.Fatalf("path: want %q, got %q", wantPath, req.Path)
+	}
+	if req.Method != "POST" {
+		t.Fatalf("method: want POST, got %s", req.Method)
+	}
+	body := string(req.Body)
+	for _, want := range []string{"To=%2B18005551234", "Body=hello+world", "From=%2B18005550000"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("body missing %q; got %q", want, body)
+		}
+	}
+}
+
+// 42. Messages.Update — Body redaction sent as form field.
+func TestMessagesUpdateRedact(t *testing.T) {
+	sid := "SM" + strings.Repeat("2", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, messagePayload(sid)),
+	}, nil)
+	defer cleanup()
+
+	_, err := c.Messages.Update(context.Background(), sid, voiceml.UpdateMessageParams{
+		Body: voiceml.String(""),
+	})
+	if err != nil {
+		t.Fatalf("Messages.Update: %v", err)
+	}
+	body := string(rec.requests[0].Body)
+	if !strings.Contains(body, "Body=") {
+		t.Errorf("body missing Body= (redaction); got %q", body)
+	}
+}
+
+// 43. Messages.List — accepts DateSent</> filters and PageToken pagination.
+func TestMessagesListFilters(t *testing.T) {
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(200, map[string]any{
+			"messages":  []any{messagePayload("")},
+			"page":      0,
+			"page_size": 50,
+			"total":     1,
+			"uri":       "/Messages",
+		}),
+	}, nil)
+	defer cleanup()
+
+	_, err := c.Messages.List(context.Background(), voiceml.ListMessagesParams{
+		To:           voiceml.String("+18005551234"),
+		DateSentMore: voiceml.String("2026-01-01"),
+	})
+	if err != nil {
+		t.Fatalf("Messages.List: %v", err)
+	}
+	q := rec.requests[0].Query
+	if !strings.Contains(q, "To=%2B18005551234") {
+		t.Errorf("query missing To; got %q", q)
+	}
+	if !strings.Contains(q, "DateSent%3E=2026-01-01") {
+		t.Errorf("query missing DateSent>; got %q", q)
+	}
+}
+
+func callPaymentPayload(sid string) map[string]any {
+	if sid == "" {
+		sid = "PY" + strings.Repeat("0", 32)
+	}
+	return map[string]any{
+		"sid":          sid,
+		"account_sid":  testAccountSid,
+		"call_sid":     "CA" + strings.Repeat("a", 32),
+		"api_version":  "2010-04-01",
+		"date_created": "Mon, 19 May 2026 12:00:00 +0000",
+		"date_updated": "Mon, 19 May 2026 12:00:00 +0000",
+		"uri":          fmt.Sprintf("/2010-04-01/Accounts/%s/Calls/%s/Payments/%s.json", testAccountSid, "CA"+strings.Repeat("a", 32), sid),
+	}
+}
+
+// 44. Calls.StartPayment — POST /Calls/{sid}/Payments with full <Pay> body.
+func TestCallsStartPayment(t *testing.T) {
+	paySid := "PY" + strings.Repeat("1", 32)
+	callSid := "CA" + strings.Repeat("a", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(201, callPaymentPayload(paySid)),
+	}, nil)
+	defer cleanup()
+
+	tokenType := voiceml.PaymentTokenTypeOneTime
+	method := voiceml.PaymentMethodCreditCard
+	pay, err := c.Calls.StartPayment(context.Background(), callSid, voiceml.CreatePaymentParams{
+		IdempotencyKey: voiceml.String("idem-1"),
+		ChargeAmount:   voiceml.String("19.99"),
+		Currency:       voiceml.String("USD"),
+		Description:    voiceml.String("ticket"),
+		PaymentMethod:  &method,
+		TokenType:      &tokenType,
+		PostalCode:     voiceml.Bool(false),
+		SecurityCode:   voiceml.Bool(true),
+	})
+	if err != nil {
+		t.Fatalf("StartPayment: %v", err)
+	}
+	if pay.Sid != paySid {
+		t.Fatalf("sid: want %q, got %q", paySid, pay.Sid)
+	}
+
+	req := rec.requests[0]
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/Calls/%s/Payments.json", testAccountSid, callSid)
+	if req.Path != wantPath {
+		t.Fatalf("path: want %q, got %q", wantPath, req.Path)
+	}
+	if req.Method != "POST" {
+		t.Fatalf("method: want POST, got %s", req.Method)
+	}
+	body := string(req.Body)
+	for _, want := range []string{
+		"IdempotencyKey=idem-1",
+		"ChargeAmount=19.99",
+		"Currency=USD",
+		"Description=ticket",
+		"PaymentMethod=credit-card",
+		"TokenType=one-time",
+		"PostalCode=false",
+		"SecurityCode=true",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("body missing %q; got %q", want, body)
+		}
+	}
+}
+
+// 45. Calls.UpdatePayment — Status=complete and Capture=... wire encoding.
+func TestCallsUpdatePayment(t *testing.T) {
+	paySid := "PY" + strings.Repeat("2", 32)
+	callSid := "CA" + strings.Repeat("b", 32)
+	c, rec, cleanup := newClient(t, []handlerStep{
+		jsonStep(202, callPaymentPayload(paySid)),
+		jsonStep(202, callPaymentPayload(paySid)),
+	}, nil)
+	defer cleanup()
+
+	status := voiceml.PaymentSessionStatusComplete
+	_, err := c.Calls.UpdatePayment(context.Background(), callSid, paySid, voiceml.UpdatePaymentParams{
+		Status: &status,
+	})
+	if err != nil {
+		t.Fatalf("UpdatePayment(complete): %v", err)
+	}
+	capture := voiceml.PaymentCaptureSecurityCode
+	_, err = c.Calls.UpdatePayment(context.Background(), callSid, paySid, voiceml.UpdatePaymentParams{
+		Capture: &capture,
+	})
+	if err != nil {
+		t.Fatalf("UpdatePayment(capture): %v", err)
+	}
+
+	wantPath := fmt.Sprintf("/2010-04-01/Accounts/%s/Calls/%s/Payments/%s.json", testAccountSid, callSid, paySid)
+	for i, r := range rec.requests {
+		if r.Path != wantPath {
+			t.Fatalf("req %d path: want %q, got %q", i, wantPath, r.Path)
+		}
+		if r.Method != "POST" {
+			t.Fatalf("req %d method: want POST, got %s", i, r.Method)
+		}
+	}
+	if !strings.Contains(string(rec.requests[0].Body), "Status=complete") {
+		t.Errorf("first request body missing Status=complete; got %q", rec.requests[0].Body)
+	}
+	if !strings.Contains(string(rec.requests[1].Body), "Capture=security-code") {
+		t.Errorf("second request body missing Capture=security-code; got %q", rec.requests[1].Body)
 	}
 }
