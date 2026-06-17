@@ -123,6 +123,10 @@ type Client struct {
 	// Messages — Twilio-compatible SMS resource backed by VoiceTel's
 	// SDK 2.2 gateway. Outbound-only today.
 	Messages *MessagesService
+
+	// SIP — Twilio-compatible SIP Trunking (Domains, CredentialLists,
+	// IpAccessControlLists, plus the four domain mapping namespaces).
+	SIP *SIPService
 }
 
 // NewClient constructs a *Client. Returns *ConfigurationError if AccountSid
@@ -199,6 +203,11 @@ func NewClient(opts ClientOptions) (*Client, error) {
 	c.IncomingPhoneNumbers = &IncomingPhoneNumbersService{c: c}
 	c.Notifications = &NotificationsService{c: c}
 	c.Messages = &MessagesService{c: c}
+	c.SIP = &SIPService{
+		Domains:              &SIPDomainsService{c: c},
+		CredentialLists:      &SIPCredentialListsService{c: c},
+		IpAccessControlLists: &SIPIpAccessControlListsService{c: c},
+	}
 	return c, nil
 }
 
