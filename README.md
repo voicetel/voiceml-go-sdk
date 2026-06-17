@@ -2,7 +2,7 @@
 
 The official Go client for the [VoiceML REST API](https://voicetel.com/docs/api/v0.7/voiceml/) — Twilio-compatible outbound voice and answering-machine-detection from VoiceTel, with strongly-typed, context-aware Go.
 
-![Version](https://img.shields.io/badge/version-0.8.0-blue)
+![Version](https://img.shields.io/badge/version-0.8.1-blue)
 ![Go](https://img.shields.io/badge/go-1.21%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-green)
 ![Tests](https://img.shields.io/badge/tests-46%20unit-brightgreen)
@@ -51,10 +51,11 @@ The official Go client for the [VoiceML REST API](https://voicetel.com/docs/api/
 - **IncomingPhoneNumbers** — list, fetch, update.
 - **Notifications** — fetch, list.
 - **SIP** — SIP Trunking: Domains (CRUD), CredentialLists + Credentials (CRUD), IpAccessControlLists + IpAddresses (CRUD), Domain↔ACL/CredentialList mappings (historical, Auth/Calls, Auth/Registrations namespaces).
+- **Routes V2** — Twilio Inbound Processing Region API: `c.RoutesV2.SipDomains.Fetch(ctx, domain)` / `Update(ctx, domain, params)`.
 - **Diagnostics** — `/health` deep probe, `/openapi.json` live spec fetch.
 
 ### 🧪 Tested
-- **57 unit tests** with `httptest`-based fakes exercising every service and every error path.
+- **60 unit tests** with `httptest`-based fakes exercising every service and every error path.
 - **Race-detector clean** (`go test -race ./...`).
 - **`go vet` and `gofmt` clean.**
 - **Integration test suite** that runs against a callBroadcast / VoiceML instance — gated by env vars, safe for CI.

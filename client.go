@@ -127,6 +127,9 @@ type Client struct {
 	// SIP — Twilio-compatible SIP Trunking (Domains, CredentialLists,
 	// IpAccessControlLists, plus the four domain mapping namespaces).
 	SIP *SIPService
+
+	// RoutesV2 — Twilio routes/v2 Inbound Processing Region API.
+	RoutesV2 *RoutesV2Service
 }
 
 // NewClient constructs a *Client. Returns *ConfigurationError if AccountSid
@@ -207,6 +210,9 @@ func NewClient(opts ClientOptions) (*Client, error) {
 		Domains:              &SIPDomainsService{c: c},
 		CredentialLists:      &SIPCredentialListsService{c: c},
 		IpAccessControlLists: &SIPIpAccessControlListsService{c: c},
+	}
+	c.RoutesV2 = &RoutesV2Service{
+		SipDomains: &RoutesV2SipDomainsService{c: c},
 	}
 	return c, nil
 }
