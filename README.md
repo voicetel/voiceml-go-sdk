@@ -1,6 +1,6 @@
 # 📞 VoiceML Go SDK
 
-The official Go client for the [VoiceML REST API](https://voicetel.com/docs/api/v0.7/voiceml/) — Twilio-compatible outbound voice and answering-machine-detection from VoiceTel, with strongly-typed, context-aware Go.
+The official Go client for the [VoiceML REST API](https://voicetel.com/docs/api/v0.8/voiceml/) — Twilio-compatible outbound voice and answering-machine-detection from VoiceTel, with strongly-typed, context-aware Go.
 
 ![Version](https://img.shields.io/badge/version-0.8.1-blue)
 ![Go](https://img.shields.io/badge/go-1.21%2B-blue)
@@ -139,7 +139,7 @@ if err != nil {
 fmt.Println(health.Status)
 ```
 
-> Don't have credentials yet? See **[voicetel.com/docs/api/v0.7/voiceml/](https://voicetel.com/docs/api/v0.7/voiceml/)** for issuance and rotation.
+> Don't have credentials yet? See **[voicetel.com/docs/api/v0.8/voiceml/](https://voicetel.com/docs/api/v0.8/voiceml/)** for issuance and rotation.
 
 ## 🗺️ Resource Reference
 
@@ -330,7 +330,7 @@ go test -tags=integration ./...
 
 ## 📖 API Documentation
 
-- **Reference docs:** [voicetel.com/docs/api/v0.7/voiceml/](https://voicetel.com/docs/api/v0.7/voiceml/)
+- **Reference docs:** [voicetel.com/docs/api/v0.8/voiceml/](https://voicetel.com/docs/api/v0.8/voiceml/)
 - **Validator:** [voicetel.com/voiceml/validator/](https://voicetel.com/voiceml/validator/)
 - **SDK catalogue:** [voicetel.com/docs/voiceml-sdks/](https://voicetel.com/docs/voiceml-sdks/)
 - **Go package docs:** [pkg.go.dev/github.com/voicetel/voiceml-go-sdk](https://pkg.go.dev/github.com/voicetel/voiceml-go-sdk)
