@@ -22,15 +22,15 @@ const (
 
 func sipDomainPayload() map[string]any {
 	return map[string]any{
-		"sid":          sipDomainSid,
-		"account_sid":  testAccountSid,
-		"domain_name":  "ingress.example.com",
-		"api_version":  "2010-04-01",
+		"sid":           sipDomainSid,
+		"account_sid":   testAccountSid,
+		"domain_name":   "ingress.example.com",
+		"api_version":   "2010-04-01",
 		"friendly_name": "ingress",
-		"secure":       true,
-		"date_created": "Mon, 17 Jun 2026 12:00:00 +0000",
-		"date_updated": "Mon, 17 Jun 2026 12:00:00 +0000",
-		"uri":          "/2010-04-01/Accounts/" + testAccountSid + "/SIP/Domains/" + sipDomainSid + ".json",
+		"secure":        true,
+		"date_created":  "Mon, 17 Jun 2026 12:00:00 +0000",
+		"date_updated":  "Mon, 17 Jun 2026 12:00:00 +0000",
+		"uri":           "/2010-04-01/Accounts/" + testAccountSid + "/SIP/Domains/" + sipDomainSid + ".json",
 	}
 }
 
@@ -47,13 +47,13 @@ func sipCredentialListPayload() map[string]any {
 
 func sipCredentialPayload() map[string]any {
 	return map[string]any{
-		"sid":                  sipCRSid,
-		"account_sid":          testAccountSid,
-		"credential_list_sid":  sipCLSid,
-		"username":             "alice",
-		"date_created":         "Mon, 17 Jun 2026 12:00:00 +0000",
-		"date_updated":         "Mon, 17 Jun 2026 12:00:00 +0000",
-		"uri":                  "/2010-04-01/Accounts/" + testAccountSid + "/SIP/CredentialLists/" + sipCLSid + "/Credentials/" + sipCRSid + ".json",
+		"sid":                 sipCRSid,
+		"account_sid":         testAccountSid,
+		"credential_list_sid": sipCLSid,
+		"username":            "alice",
+		"date_created":        "Mon, 17 Jun 2026 12:00:00 +0000",
+		"date_updated":        "Mon, 17 Jun 2026 12:00:00 +0000",
+		"uri":                 "/2010-04-01/Accounts/" + testAccountSid + "/SIP/CredentialLists/" + sipCLSid + "/Credentials/" + sipCRSid + ".json",
 	}
 }
 
@@ -70,26 +70,26 @@ func sipIpaclPayload() map[string]any {
 
 func sipIpAddressPayload() map[string]any {
 	return map[string]any{
-		"sid":                         sipIPSid,
-		"account_sid":                 testAccountSid,
-		"ip_access_control_list_sid":  sipACLSid,
-		"friendly_name":               "carrier-edge-1",
-		"ip_address":                  "203.0.113.10",
-		"cidr_prefix_length":          32,
-		"date_created":                "Mon, 17 Jun 2026 12:00:00 +0000",
-		"date_updated":                "Mon, 17 Jun 2026 12:00:00 +0000",
-		"uri":                         "/2010-04-01/Accounts/" + testAccountSid + "/SIP/IpAccessControlLists/" + sipACLSid + "/IpAddresses/" + sipIPSid + ".json",
+		"sid":                        sipIPSid,
+		"account_sid":                testAccountSid,
+		"ip_access_control_list_sid": sipACLSid,
+		"friendly_name":              "carrier-edge-1",
+		"ip_address":                 "203.0.113.10",
+		"cidr_prefix_length":         32,
+		"date_created":               "Mon, 17 Jun 2026 12:00:00 +0000",
+		"date_updated":               "Mon, 17 Jun 2026 12:00:00 +0000",
+		"uri":                        "/2010-04-01/Accounts/" + testAccountSid + "/SIP/IpAccessControlLists/" + sipACLSid + "/IpAddresses/" + sipIPSid + ".json",
 	}
 }
 
 func sipMappingPayload() map[string]any {
 	return map[string]any{
-		"sid":           sipMappingSid,
-		"account_sid":   testAccountSid,
-		"domain_sid":    sipDomainSid,
-		"date_created":  "Mon, 17 Jun 2026 12:00:00 +0000",
-		"date_updated":  "Mon, 17 Jun 2026 12:00:00 +0000",
-		"uri":           "/2010-04-01/Accounts/" + testAccountSid + "/SIP/Domains/" + sipDomainSid + "/CredentialListMappings/" + sipMappingSid + ".json",
+		"sid":          sipMappingSid,
+		"account_sid":  testAccountSid,
+		"domain_sid":   sipDomainSid,
+		"date_created": "Mon, 17 Jun 2026 12:00:00 +0000",
+		"date_updated": "Mon, 17 Jun 2026 12:00:00 +0000",
+		"uri":          "/2010-04-01/Accounts/" + testAccountSid + "/SIP/Domains/" + sipDomainSid + "/CredentialListMappings/" + sipMappingSid + ".json",
 	}
 }
 
@@ -305,11 +305,11 @@ func TestSIPIpAddressesNested(t *testing.T) {
 
 func TestSIPDomainHistoricalMappings(t *testing.T) {
 	steps := []handlerStep{
-		jsonStep(200, sipMappingPayload()),  // CreateCredentialListMapping
+		jsonStep(200, sipMappingPayload()), // CreateCredentialListMapping
 		jsonStep(200, map[string]any{"credential_list_mappings": []any{sipMappingPayload()}, "page": 0, "page_size": 50, "total": 1, "next_page_uri": nil, "uri": ""}),
-		jsonStep(200, sipMappingPayload()),  // FetchCredentialListMapping
-		jsonStep(204, nil),                  // DeleteCredentialListMapping
-		jsonStep(200, sipMappingPayload()),  // CreateIpAccessControlListMapping
+		jsonStep(200, sipMappingPayload()), // FetchCredentialListMapping
+		jsonStep(204, nil),                 // DeleteCredentialListMapping
+		jsonStep(200, sipMappingPayload()), // CreateIpAccessControlListMapping
 	}
 	c, rec, done := newClient(t, steps, nil)
 	defer done()

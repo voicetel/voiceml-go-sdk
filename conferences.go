@@ -34,22 +34,22 @@ type ConferenceList struct {
 
 // Participant is a single leg in a conference.
 type Participant struct {
-	CallSid                string `json:"call_sid"`
-	ConferenceSid          string `json:"conference_sid"`
-	AccountSid             string `json:"account_sid"`
-	Muted                  bool   `json:"muted"`
-	Hold                   bool   `json:"hold"`
-	Coaching               bool   `json:"coaching"`
-	CallSidToCoach         string `json:"call_sid_to_coach,omitempty"`
-	QueueTime              string `json:"queue_time"`
-	StartConferenceOnEnter bool   `json:"start_conference_on_enter"`
-	EndConferenceOnExit    bool   `json:"end_conference_on_exit"`
+	CallSid                string            `json:"call_sid"`
+	ConferenceSid          string            `json:"conference_sid"`
+	AccountSid             string            `json:"account_sid"`
+	Muted                  bool              `json:"muted"`
+	Hold                   bool              `json:"hold"`
+	Coaching               bool              `json:"coaching"`
+	CallSidToCoach         string            `json:"call_sid_to_coach,omitempty"`
+	QueueTime              string            `json:"queue_time"`
+	StartConferenceOnEnter bool              `json:"start_conference_on_enter"`
+	EndConferenceOnExit    bool              `json:"end_conference_on_exit"`
 	Status                 ParticipantStatus `json:"status"`
 	Label                  string            `json:"label,omitempty"`
-	APIVersion             string `json:"api_version"`
-	URI                    string `json:"uri"`
-	DateCreated            string `json:"date_created,omitempty"`
-	DateUpdated            string `json:"date_updated,omitempty"`
+	APIVersion             string            `json:"api_version"`
+	URI                    string            `json:"uri"`
+	DateCreated            string            `json:"date_created,omitempty"`
+	DateUpdated            string            `json:"date_updated,omitempty"`
 }
 
 // ParticipantList is the paginated /Conferences/{sid}/Participants list response.
@@ -87,17 +87,17 @@ func (p UpdateParticipantParams) form() url.Values {
 
 // ListConferencesParams are the filter / pagination query params for GET /Conferences.
 type ListConferencesParams struct {
-	FriendlyName   string
-	Status         string
-	DateCreated    string
-	DateCreatedLt  string
-	DateCreatedGt  string
-	DateUpdated    string
-	DateUpdatedLt  string
-	DateUpdatedGt  string
-	Page           *int
-	PageSize       *int
-	PageToken      string
+	FriendlyName  string
+	Status        string
+	DateCreated   string
+	DateCreatedLt string
+	DateCreatedGt string
+	DateUpdated   string
+	DateUpdatedLt string
+	DateUpdatedGt string
+	Page          *int
+	PageSize      *int
+	PageToken     string
 }
 
 func (p ListConferencesParams) query() url.Values {
@@ -149,9 +149,9 @@ func (p CreateParticipantParams) form() url.Values {
 // ListParticipantsParams are the filter / pagination query params for
 // GET /Conferences/{sid}/Participants.
 type ListParticipantsParams struct {
-	Muted    *bool
-	Hold     *bool
-	Coaching *bool
+	Muted     *bool
+	Hold      *bool
+	Coaching  *bool
 	Page      *int
 	PageSize  *int
 	PageToken string

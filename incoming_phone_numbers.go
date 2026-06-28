@@ -40,31 +40,31 @@ type IncomingPhoneNumber struct {
 
 	Capabilities IncomingPhoneNumberCapabilities `json:"capabilities"`
 
-	VoiceURL             *string `json:"voice_url,omitempty"`
-	VoiceMethod          *string `json:"voice_method,omitempty"`
-	VoiceFallbackURL     *string `json:"voice_fallback_url,omitempty"`
-	VoiceFallbackMethod  *string `json:"voice_fallback_method,omitempty"`
-	VoiceApplicationSid  *string `json:"voice_application_sid,omitempty"`
-	VoiceCallerIDLookup  *bool   `json:"voice_caller_id_lookup,omitempty"`
-	VoiceReceiveMode     *string `json:"voice_receive_mode,omitempty"`
+	VoiceURL            *string `json:"voice_url,omitempty"`
+	VoiceMethod         *string `json:"voice_method,omitempty"`
+	VoiceFallbackURL    *string `json:"voice_fallback_url,omitempty"`
+	VoiceFallbackMethod *string `json:"voice_fallback_method,omitempty"`
+	VoiceApplicationSid *string `json:"voice_application_sid,omitempty"`
+	VoiceCallerIDLookup *bool   `json:"voice_caller_id_lookup,omitempty"`
+	VoiceReceiveMode    *string `json:"voice_receive_mode,omitempty"`
 
-	SMSURL              *string `json:"sms_url,omitempty"`
-	SMSMethod           *string `json:"sms_method,omitempty"`
-	SMSFallbackURL      *string `json:"sms_fallback_url,omitempty"`
-	SMSFallbackMethod   *string `json:"sms_fallback_method,omitempty"`
-	SMSApplicationSid   *string `json:"sms_application_sid,omitempty"`
+	SMSURL            *string `json:"sms_url,omitempty"`
+	SMSMethod         *string `json:"sms_method,omitempty"`
+	SMSFallbackURL    *string `json:"sms_fallback_url,omitempty"`
+	SMSFallbackMethod *string `json:"sms_fallback_method,omitempty"`
+	SMSApplicationSid *string `json:"sms_application_sid,omitempty"`
 
 	StatusCallback       *string `json:"status_callback,omitempty"`
 	StatusCallbackMethod *string `json:"status_callback_method,omitempty"`
 
-	TrunkSid                *string `json:"trunk_sid,omitempty"`
-	AddressSid              *string `json:"address_sid,omitempty"`
-	AddressRequirements     *string `json:"address_requirements,omitempty"`
-	IdentitySid             *string `json:"identity_sid,omitempty"`
-	BundleSid               *string `json:"bundle_sid,omitempty"`
-	EmergencyStatus         *string `json:"emergency_status,omitempty"`
-	EmergencyAddressSid     *string `json:"emergency_address_sid,omitempty"`
-	EmergencyAddressStatus  *string `json:"emergency_address_status,omitempty"`
+	TrunkSid               *string `json:"trunk_sid,omitempty"`
+	AddressSid             *string `json:"address_sid,omitempty"`
+	AddressRequirements    *string `json:"address_requirements,omitempty"`
+	IdentitySid            *string `json:"identity_sid,omitempty"`
+	BundleSid              *string `json:"bundle_sid,omitempty"`
+	EmergencyStatus        *string `json:"emergency_status,omitempty"`
+	EmergencyAddressSid    *string `json:"emergency_address_sid,omitempty"`
+	EmergencyAddressStatus *string `json:"emergency_address_status,omitempty"`
 
 	Status      *string `json:"status,omitempty"`
 	DateCreated string  `json:"date_created,omitempty"`
@@ -213,13 +213,13 @@ func (s *IncomingPhoneNumbersService) Update(ctx context.Context, sid string, pa
 // ListTypedIncomingPhoneNumbersParams are query params for the type-specific
 // /IncomingPhoneNumbers/{Local,Mobile,TollFree} list endpoints.
 type ListTypedIncomingPhoneNumbersParams struct {
-	PhoneNumber   string
-	FriendlyName  string
-	Beta          *bool
-	Origin        string
-	Page          *int
-	PageSize      *int
-	PageToken     string
+	PhoneNumber  string
+	FriendlyName string
+	Beta         *bool
+	Origin       string
+	Page         *int
+	PageSize     *int
+	PageToken    string
 }
 
 func (p ListTypedIncomingPhoneNumbersParams) query() url.Values {

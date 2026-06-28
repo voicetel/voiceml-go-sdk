@@ -135,8 +135,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.8.1" {
-		t.Fatalf("Version: want 0.8.1, got %q", voiceml.Version)
+	if voiceml.Version != "0.9.1" {
+		t.Fatalf("Version: want 0.9.1, got %q", voiceml.Version)
 	}
 
 	cases := []struct {
@@ -915,13 +915,13 @@ func TestRecordingMediaURLRoundTrip(t *testing.T) {
 	mediaURL := "https://media.example.com/recordings/" + rSid + ".wav"
 	c, _, cleanup := newClient(t, []handlerStep{
 		jsonStep(200, map[string]any{
-			"sid":          rSid,
-			"account_sid":  testAccountSid,
-			"call_sid":     "CA" + strings.Repeat("b", 32),
-			"status":       "completed",
-			"api_version":  "2010-04-01",
-			"uri":          "/x",
-			"media_url":    mediaURL,
+			"sid":         rSid,
+			"account_sid": testAccountSid,
+			"call_sid":    "CA" + strings.Repeat("b", 32),
+			"status":      "completed",
+			"api_version": "2010-04-01",
+			"uri":         "/x",
+			"media_url":   mediaURL,
 		}),
 	}, nil)
 	defer cleanup()
@@ -975,19 +975,19 @@ func TestParticipantCoachingFields(t *testing.T) {
 	coachSid := "CA" + strings.Repeat("e", 32)
 	c, rec, cleanup := newClient(t, []handlerStep{
 		jsonStep(200, map[string]any{
-			"call_sid":                 callSid,
-			"conference_sid":           cfSid,
-			"account_sid":              testAccountSid,
-			"muted":                    false,
-			"hold":                     false,
-			"coaching":                 true,
-			"call_sid_to_coach":        coachSid,
-			"queue_time":               "12",
+			"call_sid":                  callSid,
+			"conference_sid":            cfSid,
+			"account_sid":               testAccountSid,
+			"muted":                     false,
+			"hold":                      false,
+			"coaching":                  true,
+			"call_sid_to_coach":         coachSid,
+			"queue_time":                "12",
 			"start_conference_on_enter": true,
-			"end_conference_on_exit":   false,
-			"status":                   "connected",
-			"api_version":              "2010-04-01",
-			"uri":                      "/x",
+			"end_conference_on_exit":    false,
+			"status":                    "connected",
+			"api_version":               "2010-04-01",
+			"uri":                       "/x",
 		}),
 	}, nil)
 	defer cleanup()
@@ -1015,14 +1015,14 @@ func TestRecordingErrorCodeAndSource(t *testing.T) {
 	rSid := "RE" + strings.Repeat("f", 32)
 	c, _, cleanup := newClient(t, []handlerStep{
 		jsonStep(200, map[string]any{
-			"sid":          rSid,
-			"account_sid":  testAccountSid,
-			"call_sid":     "CA" + strings.Repeat("0", 32),
-			"status":       "completed",
-			"source":       "StartConferenceRecordingAPI",
-			"error_code":   nil,
-			"api_version":  "2010-04-01",
-			"uri":          "/x",
+			"sid":         rSid,
+			"account_sid": testAccountSid,
+			"call_sid":    "CA" + strings.Repeat("0", 32),
+			"status":      "completed",
+			"source":      "StartConferenceRecordingAPI",
+			"error_code":  nil,
+			"api_version": "2010-04-01",
+			"uri":         "/x",
 		}),
 	}, nil)
 	defer cleanup()

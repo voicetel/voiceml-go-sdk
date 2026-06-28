@@ -13,25 +13,25 @@ type RecordingsService struct{ c *Client }
 // the endpoint that produced it — call-scoped and conference-scoped lists may
 // omit pagination fields.
 type Recording struct {
-	Sid               string         `json:"sid"`
-	AccountSid        string         `json:"account_sid"`
-	CallSid           string         `json:"call_sid"`
-	ConferenceSid     string         `json:"conference_sid,omitempty"`
+	Sid               string          `json:"sid"`
+	AccountSid        string          `json:"account_sid"`
+	CallSid           string          `json:"call_sid"`
+	ConferenceSid     string          `json:"conference_sid,omitempty"`
 	Status            RecordingStatus `json:"status"`
 	Source            RecordingSource `json:"source,omitempty"`
-	Channels          *int           `json:"channels,omitempty"`
-	Duration          string         `json:"duration,omitempty"`
-	APIVersion        string         `json:"api_version,omitempty"`
-	URI               string         `json:"uri,omitempty"`
-	MediaURL          string         `json:"media_url,omitempty"`
-	ErrorCode         *int           `json:"error_code"`
-	DateCreated       string         `json:"date_created,omitempty"`
-	DateUpdated       string         `json:"date_updated,omitempty"`
-	StartTime         string         `json:"start_time,omitempty"`
-	Price             string         `json:"price,omitempty"`
-	PriceUnit         string         `json:"price_unit,omitempty"`
-	EncryptionDetails map[string]any `json:"encryption_details,omitempty"`
-	SubresourceURIs   map[string]any `json:"subresource_uris,omitempty"`
+	Channels          *int            `json:"channels,omitempty"`
+	Duration          string          `json:"duration,omitempty"`
+	APIVersion        string          `json:"api_version,omitempty"`
+	URI               string          `json:"uri,omitempty"`
+	MediaURL          string          `json:"media_url,omitempty"`
+	ErrorCode         *int            `json:"error_code"`
+	DateCreated       string          `json:"date_created,omitempty"`
+	DateUpdated       string          `json:"date_updated,omitempty"`
+	StartTime         string          `json:"start_time,omitempty"`
+	Price             string          `json:"price,omitempty"`
+	PriceUnit         string          `json:"price_unit,omitempty"`
+	EncryptionDetails map[string]any  `json:"encryption_details,omitempty"`
+	SubresourceURIs   map[string]any  `json:"subresource_uris,omitempty"`
 }
 
 // RecordingList is the list response for /Recordings (account-scoped) and the

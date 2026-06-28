@@ -21,8 +21,8 @@ const (
 type CallDirection string
 
 const (
-	CallDirectionInbound     CallDirection = "inbound"
-	CallDirectionOutboundAPI CallDirection = "outbound-api"
+	CallDirectionInbound      CallDirection = "inbound"
+	CallDirectionOutboundAPI  CallDirection = "outbound-api"
 	CallDirectionOutboundDial CallDirection = "outbound-dial"
 )
 
@@ -79,12 +79,12 @@ const (
 type RecordingSource string
 
 const (
-	RecordingSourceOutboundAPI                RecordingSource = "OutboundAPI"
-	RecordingSourceRecordVerb                 RecordingSource = "RecordVerb"
-	RecordingSourceDialVerb                   RecordingSource = "DialVerb"
-	RecordingSourceConference                 RecordingSource = "Conference"
-	RecordingSourceTrunking                   RecordingSource = "Trunking"
-	RecordingSourceStartCallRecordingAPI      RecordingSource = "StartCallRecordingAPI"
+	RecordingSourceOutboundAPI                 RecordingSource = "OutboundAPI"
+	RecordingSourceRecordVerb                  RecordingSource = "RecordVerb"
+	RecordingSourceDialVerb                    RecordingSource = "DialVerb"
+	RecordingSourceConference                  RecordingSource = "Conference"
+	RecordingSourceTrunking                    RecordingSource = "Trunking"
+	RecordingSourceStartCallRecordingAPI       RecordingSource = "StartCallRecordingAPI"
 	RecordingSourceStartConferenceRecordingAPI RecordingSource = "StartConferenceRecordingAPI"
 )
 

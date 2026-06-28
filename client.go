@@ -130,6 +130,21 @@ type Client struct {
 
 	// RoutesV2 — Twilio routes/v2 Inbound Processing Region API.
 	RoutesV2 *RoutesV2Service
+
+	// ConversationsV1 — Twilio conversations.twilio.com/v1 surface: stateful
+	// messaging threads, messages, participants, scoped webhooks, roles,
+	// users, push credentials, account configuration + addresses, services.
+	ConversationsV1 *ConversationsV1Service
+
+	// VoiceV1 — Twilio voice.twilio.com/v1 surface: ByocTrunks, ConnectionPolicies
+	// (+ nested Targets), DialingPermissions Settings, SourceIpMappings, IpRecords.
+	VoiceV1 *VoiceV1Service
+
+	// AssistantsV1 — Twilio AI-Assistants product surface under /v1/Assistants:
+	// Assistants + attached Tools and Knowledge, Sessions + Messages, Feedback,
+	// and Tool/Knowledge-scoped Policies. JSON request bodies, no Account SID
+	// in path (account resolved from HTTP Basic auth).
+	AssistantsV1 *AssistantsV1Service
 }
 
 // NewClient constructs a *Client. Returns *ConfigurationError if AccountSid
@@ -213,7 +228,11 @@ func NewClient(opts ClientOptions) (*Client, error) {
 	}
 	c.RoutesV2 = &RoutesV2Service{
 		SipDomains: &RoutesV2SipDomainsService{c: c},
+		c:          c,
 	}
+	c.ConversationsV1 = &ConversationsV1Service{c: c}
+	c.VoiceV1 = &VoiceV1Service{c: c}
+	c.AssistantsV1 = &AssistantsV1Service{c: c}
 	return c, nil
 }
 
