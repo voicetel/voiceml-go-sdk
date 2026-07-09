@@ -31,11 +31,12 @@ type recorder struct {
 }
 
 type capturedRequest struct {
-	Method string
-	Path   string
-	Query  string
-	Header http.Header
-	Body   []byte
+	Method  string
+	Path    string
+	RawPath string
+	Query   string
+	Header  http.Header
+	Body    []byte
 }
 
 // newRecorder returns a *recorder and an http.Handler. The handler walks
@@ -51,11 +52,12 @@ func newRecorder(t *testing.T, responses []handlerStep) (*recorder, http.Handler
 			t.Fatalf("read body: %v", err)
 		}
 		rec.requests = append(rec.requests, capturedRequest{
-			Method: r.Method,
-			Path:   r.URL.Path,
-			Query:  r.URL.RawQuery,
-			Header: r.Header.Clone(),
-			Body:   body,
+			Method:  r.Method,
+			Path:    r.URL.Path,
+			RawPath: r.URL.EscapedPath(),
+			Query:   r.URL.RawQuery,
+			Header:  r.Header.Clone(),
+			Body:    body,
 		})
 		if i >= len(responses) {
 			t.Fatalf("recorder: out of responses after %d requests", i)
@@ -135,8 +137,8 @@ func callPayload(sid string) map[string]any {
 
 // 1. Module surface — version + required options.
 func TestModuleSurface(t *testing.T) {
-	if voiceml.Version != "0.9.1" {
-		t.Fatalf("Version: want 0.9.1, got %q", voiceml.Version)
+	if voiceml.Version != "0.9.2" {
+		t.Fatalf("Version: want 0.9.2, got %q", voiceml.Version)
 	}
 
 	cases := []struct {

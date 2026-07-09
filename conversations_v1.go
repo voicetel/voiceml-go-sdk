@@ -786,14 +786,14 @@ func (p CreateServiceRequest) form() url.Values {
 // ConversationsV1Service exposes the conversations.twilio.com/v1 endpoints.
 // Reach it as c.ConversationsV1. Methods are named verb+resource so the
 // surface stays flat for IDE discovery.
-type ConversationsV1Service struct{ c *Client }
+type ConversationsV1Service struct{ t *transport }
 
 // --- Conversation ----------------------------------------------------------
 
 // CreateConversation adds a Conversation.
 func (s *ConversationsV1Service) CreateConversation(ctx context.Context, params CreateConversationRequest) (*ConversationsV1Conversation, error) {
 	var out ConversationsV1Conversation
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Conversations", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -804,7 +804,7 @@ func (s *ConversationsV1Service) CreateConversation(ctx context.Context, params 
 // ListConversations returns a single page of Conversations.
 func (s *ConversationsV1Service) ListConversations(ctx context.Context, params ListConversationsParams) (*ConversationsV1ConversationList, error) {
 	var out ConversationsV1ConversationList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -815,7 +815,7 @@ func (s *ConversationsV1Service) ListConversations(ctx context.Context, params L
 // FetchConversation retrieves a Conversation by sid.
 func (s *ConversationsV1Service) FetchConversation(ctx context.Context, conversationSid string) (*ConversationsV1Conversation, error) {
 	var out ConversationsV1Conversation
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid,
 	}, &out); err != nil {
 		return nil, err
@@ -826,7 +826,7 @@ func (s *ConversationsV1Service) FetchConversation(ctx context.Context, conversa
 // UpdateConversation mutates a Conversation in place.
 func (s *ConversationsV1Service) UpdateConversation(ctx context.Context, conversationSid string, params UpdateConversationRequest) (*ConversationsV1Conversation, error) {
 	var out ConversationsV1Conversation
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Conversations/" + conversationSid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -836,7 +836,7 @@ func (s *ConversationsV1Service) UpdateConversation(ctx context.Context, convers
 
 // DeleteConversation removes a Conversation.
 func (s *ConversationsV1Service) DeleteConversation(ctx context.Context, conversationSid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Conversations/" + conversationSid,
 	}, nil)
 }
@@ -846,7 +846,7 @@ func (s *ConversationsV1Service) DeleteConversation(ctx context.Context, convers
 // CreateMessage adds a Message to a Conversation.
 func (s *ConversationsV1Service) CreateMessage(ctx context.Context, conversationSid string, params CreateMessageRequest) (*ConversationsV1ConversationMessage, error) {
 	var out ConversationsV1ConversationMessage
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Messages", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -857,7 +857,7 @@ func (s *ConversationsV1Service) CreateMessage(ctx context.Context, conversation
 // ListMessages returns a single page of a Conversation's Messages.
 func (s *ConversationsV1Service) ListMessages(ctx context.Context, conversationSid string, params V1PageParams) (*ConversationsV1ConversationMessageList, error) {
 	var out ConversationsV1ConversationMessageList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Messages", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -868,7 +868,7 @@ func (s *ConversationsV1Service) ListMessages(ctx context.Context, conversationS
 // FetchMessage retrieves a Message by sid.
 func (s *ConversationsV1Service) FetchMessage(ctx context.Context, conversationSid, messageSid string) (*ConversationsV1ConversationMessage, error) {
 	var out ConversationsV1ConversationMessage
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid,
 	}, &out); err != nil {
 		return nil, err
@@ -879,7 +879,7 @@ func (s *ConversationsV1Service) FetchMessage(ctx context.Context, conversationS
 // UpdateMessage mutates a Message in place.
 func (s *ConversationsV1Service) UpdateMessage(ctx context.Context, conversationSid, messageSid string, params UpdateMessageRequest) (*ConversationsV1ConversationMessage, error) {
 	var out ConversationsV1ConversationMessage
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -889,7 +889,7 @@ func (s *ConversationsV1Service) UpdateMessage(ctx context.Context, conversation
 
 // DeleteMessage removes a Message.
 func (s *ConversationsV1Service) DeleteMessage(ctx context.Context, conversationSid, messageSid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid,
 	}, nil)
 }
@@ -899,7 +899,7 @@ func (s *ConversationsV1Service) DeleteMessage(ctx context.Context, conversation
 // CreateParticipant adds a Participant to a Conversation.
 func (s *ConversationsV1Service) CreateParticipant(ctx context.Context, conversationSid string, params CreateParticipantRequest) (*ConversationsV1ConversationParticipant, error) {
 	var out ConversationsV1ConversationParticipant
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Participants", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -910,7 +910,7 @@ func (s *ConversationsV1Service) CreateParticipant(ctx context.Context, conversa
 // ListParticipants returns a single page of a Conversation's Participants.
 func (s *ConversationsV1Service) ListParticipants(ctx context.Context, conversationSid string, params V1PageParams) (*ConversationsV1ConversationParticipantList, error) {
 	var out ConversationsV1ConversationParticipantList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Participants", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -921,7 +921,7 @@ func (s *ConversationsV1Service) ListParticipants(ctx context.Context, conversat
 // FetchParticipant retrieves a Participant by sid.
 func (s *ConversationsV1Service) FetchParticipant(ctx context.Context, conversationSid, participantSid string) (*ConversationsV1ConversationParticipant, error) {
 	var out ConversationsV1ConversationParticipant
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Participants/" + participantSid,
 	}, &out); err != nil {
 		return nil, err
@@ -932,7 +932,7 @@ func (s *ConversationsV1Service) FetchParticipant(ctx context.Context, conversat
 // UpdateParticipant mutates a Participant in place.
 func (s *ConversationsV1Service) UpdateParticipant(ctx context.Context, conversationSid, participantSid string, params UpdateParticipantRequest) (*ConversationsV1ConversationParticipant, error) {
 	var out ConversationsV1ConversationParticipant
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Participants/" + participantSid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -942,7 +942,7 @@ func (s *ConversationsV1Service) UpdateParticipant(ctx context.Context, conversa
 
 // DeleteParticipant removes a Participant.
 func (s *ConversationsV1Service) DeleteParticipant(ctx context.Context, conversationSid, participantSid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Conversations/" + conversationSid + "/Participants/" + participantSid,
 	}, nil)
 }
@@ -952,7 +952,7 @@ func (s *ConversationsV1Service) DeleteParticipant(ctx context.Context, conversa
 // ListMessageReceipts returns a single page of a Message's delivery receipts.
 func (s *ConversationsV1Service) ListMessageReceipts(ctx context.Context, conversationSid, messageSid string, params V1PageParams) (*ConversationsV1ConversationMessageReceiptList, error) {
 	var out ConversationsV1ConversationMessageReceiptList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid + "/Receipts", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -963,7 +963,7 @@ func (s *ConversationsV1Service) ListMessageReceipts(ctx context.Context, conver
 // FetchMessageReceipt retrieves a single delivery receipt by sid.
 func (s *ConversationsV1Service) FetchMessageReceipt(ctx context.Context, conversationSid, messageSid, sid string) (*ConversationsV1ConversationMessageReceipt, error) {
 	var out ConversationsV1ConversationMessageReceipt
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid + "/Receipts/" + sid,
 	}, &out); err != nil {
 		return nil, err
@@ -976,7 +976,7 @@ func (s *ConversationsV1Service) FetchMessageReceipt(ctx context.Context, conver
 // CreateScopedWebhook adds a webhook scoped to a Conversation.
 func (s *ConversationsV1Service) CreateScopedWebhook(ctx context.Context, conversationSid string, params CreateScopedWebhookRequest) (*ConversationsV1ConversationScopedWebhook, error) {
 	var out ConversationsV1ConversationScopedWebhook
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Webhooks", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -987,7 +987,7 @@ func (s *ConversationsV1Service) CreateScopedWebhook(ctx context.Context, conver
 // ListScopedWebhooks returns a single page of a Conversation's scoped webhooks.
 func (s *ConversationsV1Service) ListScopedWebhooks(ctx context.Context, conversationSid string, params V1PageParams) (*ConversationsV1ConversationScopedWebhookList, error) {
 	var out ConversationsV1ConversationScopedWebhookList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Webhooks", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -998,7 +998,7 @@ func (s *ConversationsV1Service) ListScopedWebhooks(ctx context.Context, convers
 // FetchScopedWebhook retrieves a scoped webhook by sid.
 func (s *ConversationsV1Service) FetchScopedWebhook(ctx context.Context, conversationSid, webhookSid string) (*ConversationsV1ConversationScopedWebhook, error) {
 	var out ConversationsV1ConversationScopedWebhook
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Webhooks/" + webhookSid,
 	}, &out); err != nil {
 		return nil, err
@@ -1009,7 +1009,7 @@ func (s *ConversationsV1Service) FetchScopedWebhook(ctx context.Context, convers
 // UpdateScopedWebhook mutates a scoped webhook in place.
 func (s *ConversationsV1Service) UpdateScopedWebhook(ctx context.Context, conversationSid, webhookSid string, params UpdateScopedWebhookRequest) (*ConversationsV1ConversationScopedWebhook, error) {
 	var out ConversationsV1ConversationScopedWebhook
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Webhooks/" + webhookSid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1019,7 +1019,7 @@ func (s *ConversationsV1Service) UpdateScopedWebhook(ctx context.Context, conver
 
 // DeleteScopedWebhook removes a scoped webhook.
 func (s *ConversationsV1Service) DeleteScopedWebhook(ctx context.Context, conversationSid, webhookSid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Conversations/" + conversationSid + "/Webhooks/" + webhookSid,
 	}, nil)
 }
@@ -1029,7 +1029,7 @@ func (s *ConversationsV1Service) DeleteScopedWebhook(ctx context.Context, conver
 // CreateRole adds a Role.
 func (s *ConversationsV1Service) CreateRole(ctx context.Context, params CreateRoleRequest) (*ConversationsV1Role, error) {
 	var out ConversationsV1Role
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Roles", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1040,7 +1040,7 @@ func (s *ConversationsV1Service) CreateRole(ctx context.Context, params CreateRo
 // ListRoles returns a single page of Roles.
 func (s *ConversationsV1Service) ListRoles(ctx context.Context, params V1PageParams) (*ConversationsV1RoleList, error) {
 	var out ConversationsV1RoleList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Roles", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -1051,7 +1051,7 @@ func (s *ConversationsV1Service) ListRoles(ctx context.Context, params V1PagePar
 // FetchRole retrieves a Role by sid.
 func (s *ConversationsV1Service) FetchRole(ctx context.Context, sid string) (*ConversationsV1Role, error) {
 	var out ConversationsV1Role
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Roles/" + sid,
 	}, &out); err != nil {
 		return nil, err
@@ -1062,7 +1062,7 @@ func (s *ConversationsV1Service) FetchRole(ctx context.Context, sid string) (*Co
 // UpdateRole replaces a Role's permission list.
 func (s *ConversationsV1Service) UpdateRole(ctx context.Context, sid string, params UpdateRoleRequest) (*ConversationsV1Role, error) {
 	var out ConversationsV1Role
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Roles/" + sid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1072,7 +1072,7 @@ func (s *ConversationsV1Service) UpdateRole(ctx context.Context, sid string, par
 
 // DeleteRole removes a Role.
 func (s *ConversationsV1Service) DeleteRole(ctx context.Context, sid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Roles/" + sid,
 	}, nil)
 }
@@ -1082,7 +1082,7 @@ func (s *ConversationsV1Service) DeleteRole(ctx context.Context, sid string) err
 // CreateUser adds a User.
 func (s *ConversationsV1Service) CreateUser(ctx context.Context, params CreateUserRequest) (*ConversationsV1User, error) {
 	var out ConversationsV1User
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Users", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1093,7 +1093,7 @@ func (s *ConversationsV1Service) CreateUser(ctx context.Context, params CreateUs
 // ListUsers returns a single page of Users.
 func (s *ConversationsV1Service) ListUsers(ctx context.Context, params V1PageParams) (*ConversationsV1UserList, error) {
 	var out ConversationsV1UserList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Users", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -1104,7 +1104,7 @@ func (s *ConversationsV1Service) ListUsers(ctx context.Context, params V1PagePar
 // FetchUser retrieves a User by sid.
 func (s *ConversationsV1Service) FetchUser(ctx context.Context, sid string) (*ConversationsV1User, error) {
 	var out ConversationsV1User
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Users/" + sid,
 	}, &out); err != nil {
 		return nil, err
@@ -1115,7 +1115,7 @@ func (s *ConversationsV1Service) FetchUser(ctx context.Context, sid string) (*Co
 // UpdateUser mutates a User in place.
 func (s *ConversationsV1Service) UpdateUser(ctx context.Context, sid string, params UpdateUserRequest) (*ConversationsV1User, error) {
 	var out ConversationsV1User
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Users/" + sid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1125,7 +1125,7 @@ func (s *ConversationsV1Service) UpdateUser(ctx context.Context, sid string, par
 
 // DeleteUser removes a User.
 func (s *ConversationsV1Service) DeleteUser(ctx context.Context, sid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Users/" + sid,
 	}, nil)
 }
@@ -1135,7 +1135,7 @@ func (s *ConversationsV1Service) DeleteUser(ctx context.Context, sid string) err
 // ListUserConversations returns a single page of a User's conversations.
 func (s *ConversationsV1Service) ListUserConversations(ctx context.Context, userSid string, params V1PageParams) (*ConversationsV1UserConversationList, error) {
 	var out ConversationsV1UserConversationList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Users/" + userSid + "/Conversations", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -1146,7 +1146,7 @@ func (s *ConversationsV1Service) ListUserConversations(ctx context.Context, user
 // FetchUserConversation retrieves a single User-Conversation membership.
 func (s *ConversationsV1Service) FetchUserConversation(ctx context.Context, userSid, conversationSid string) (*ConversationsV1UserConversation, error) {
 	var out ConversationsV1UserConversation
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Users/" + userSid + "/Conversations/" + conversationSid,
 	}, &out); err != nil {
 		return nil, err
@@ -1157,7 +1157,7 @@ func (s *ConversationsV1Service) FetchUserConversation(ctx context.Context, user
 // UpdateUserConversation mutates per-user state (notification level, read marker).
 func (s *ConversationsV1Service) UpdateUserConversation(ctx context.Context, userSid, conversationSid string, params UpdateUserConversationRequest) (*ConversationsV1UserConversation, error) {
 	var out ConversationsV1UserConversation
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Users/" + userSid + "/Conversations/" + conversationSid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1167,7 +1167,7 @@ func (s *ConversationsV1Service) UpdateUserConversation(ctx context.Context, use
 
 // DeleteUserConversation removes a User from a Conversation.
 func (s *ConversationsV1Service) DeleteUserConversation(ctx context.Context, userSid, conversationSid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Users/" + userSid + "/Conversations/" + conversationSid,
 	}, nil)
 }
@@ -1177,7 +1177,7 @@ func (s *ConversationsV1Service) DeleteUserConversation(ctx context.Context, use
 // CreateCredential adds a push Credential.
 func (s *ConversationsV1Service) CreateCredential(ctx context.Context, params CreateCredentialRequest) (*ConversationsV1Credential, error) {
 	var out ConversationsV1Credential
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Credentials", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1188,7 +1188,7 @@ func (s *ConversationsV1Service) CreateCredential(ctx context.Context, params Cr
 // ListCredentials returns a single page of push Credentials.
 func (s *ConversationsV1Service) ListCredentials(ctx context.Context, params V1PageParams) (*ConversationsV1CredentialList, error) {
 	var out ConversationsV1CredentialList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Credentials", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -1199,7 +1199,7 @@ func (s *ConversationsV1Service) ListCredentials(ctx context.Context, params V1P
 // FetchCredential retrieves a push Credential by sid.
 func (s *ConversationsV1Service) FetchCredential(ctx context.Context, sid string) (*ConversationsV1Credential, error) {
 	var out ConversationsV1Credential
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Credentials/" + sid,
 	}, &out); err != nil {
 		return nil, err
@@ -1210,7 +1210,7 @@ func (s *ConversationsV1Service) FetchCredential(ctx context.Context, sid string
 // UpdateCredential mutates a push Credential in place.
 func (s *ConversationsV1Service) UpdateCredential(ctx context.Context, sid string, params UpdateCredentialRequest) (*ConversationsV1Credential, error) {
 	var out ConversationsV1Credential
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Credentials/" + sid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1220,7 +1220,7 @@ func (s *ConversationsV1Service) UpdateCredential(ctx context.Context, sid strin
 
 // DeleteCredential removes a push Credential.
 func (s *ConversationsV1Service) DeleteCredential(ctx context.Context, sid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Credentials/" + sid,
 	}, nil)
 }
@@ -1230,7 +1230,7 @@ func (s *ConversationsV1Service) DeleteCredential(ctx context.Context, sid strin
 // FetchConfiguration retrieves the account-global Conversations Configuration.
 func (s *ConversationsV1Service) FetchConfiguration(ctx context.Context) (*ConversationsV1Configuration, error) {
 	var out ConversationsV1Configuration
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Configuration",
 	}, &out); err != nil {
 		return nil, err
@@ -1241,7 +1241,7 @@ func (s *ConversationsV1Service) FetchConfiguration(ctx context.Context) (*Conve
 // UpdateConfiguration mutates the account-global Conversations Configuration.
 func (s *ConversationsV1Service) UpdateConfiguration(ctx context.Context, params UpdateConfigurationRequest) (*ConversationsV1Configuration, error) {
 	var out ConversationsV1Configuration
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Configuration", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1252,7 +1252,7 @@ func (s *ConversationsV1Service) UpdateConfiguration(ctx context.Context, params
 // FetchConfigurationWebhook retrieves the account-global webhook config.
 func (s *ConversationsV1Service) FetchConfigurationWebhook(ctx context.Context) (*ConversationsV1ConfigurationWebhook, error) {
 	var out ConversationsV1ConfigurationWebhook
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Configuration/Webhooks",
 	}, &out); err != nil {
 		return nil, err
@@ -1263,7 +1263,7 @@ func (s *ConversationsV1Service) FetchConfigurationWebhook(ctx context.Context) 
 // UpdateConfigurationWebhook mutates the account-global webhook config.
 func (s *ConversationsV1Service) UpdateConfigurationWebhook(ctx context.Context, params UpdateConfigurationWebhookRequest) (*ConversationsV1ConfigurationWebhook, error) {
 	var out ConversationsV1ConfigurationWebhook
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Configuration/Webhooks", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1276,7 +1276,7 @@ func (s *ConversationsV1Service) UpdateConfigurationWebhook(ctx context.Context,
 // CreateConfigAddress adds a Configuration Address.
 func (s *ConversationsV1Service) CreateConfigAddress(ctx context.Context, params CreateConfigAddressRequest) (*ConversationsV1ConfigAddress, error) {
 	var out ConversationsV1ConfigAddress
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Configuration/Addresses", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1287,7 +1287,7 @@ func (s *ConversationsV1Service) CreateConfigAddress(ctx context.Context, params
 // ListConfigAddresses returns a single page of Configuration Addresses.
 func (s *ConversationsV1Service) ListConfigAddresses(ctx context.Context, params V1PageParams) (*ConversationsV1ConfigAddressList, error) {
 	var out ConversationsV1ConfigAddressList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Configuration/Addresses", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -1298,7 +1298,7 @@ func (s *ConversationsV1Service) ListConfigAddresses(ctx context.Context, params
 // FetchConfigAddress retrieves a Configuration Address by sid.
 func (s *ConversationsV1Service) FetchConfigAddress(ctx context.Context, sid string) (*ConversationsV1ConfigAddress, error) {
 	var out ConversationsV1ConfigAddress
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Configuration/Addresses/" + sid,
 	}, &out); err != nil {
 		return nil, err
@@ -1309,7 +1309,7 @@ func (s *ConversationsV1Service) FetchConfigAddress(ctx context.Context, sid str
 // UpdateConfigAddress mutates a Configuration Address in place.
 func (s *ConversationsV1Service) UpdateConfigAddress(ctx context.Context, sid string, params UpdateConfigAddressRequest) (*ConversationsV1ConfigAddress, error) {
 	var out ConversationsV1ConfigAddress
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Configuration/Addresses/" + sid, form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1319,7 +1319,7 @@ func (s *ConversationsV1Service) UpdateConfigAddress(ctx context.Context, sid st
 
 // DeleteConfigAddress removes a Configuration Address.
 func (s *ConversationsV1Service) DeleteConfigAddress(ctx context.Context, sid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Configuration/Addresses/" + sid,
 	}, nil)
 }
@@ -1330,7 +1330,7 @@ func (s *ConversationsV1Service) DeleteConfigAddress(ctx context.Context, sid st
 // belongs to, optionally filtered by Identity or messaging-binding Address.
 func (s *ConversationsV1Service) ListParticipantConversations(ctx context.Context, params ListParticipantConversationsParams) (*ConversationsV1ParticipantConversationList, error) {
 	var out ConversationsV1ParticipantConversationList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/ParticipantConversations", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -1343,7 +1343,7 @@ func (s *ConversationsV1Service) ListParticipantConversations(ctx context.Contex
 // CreateConversationWithParticipants adds a Conversation and its initial Participants in one call.
 func (s *ConversationsV1Service) CreateConversationWithParticipants(ctx context.Context, params CreateConversationWithParticipantsRequest) (*ConversationsV1ConversationWithParticipants, error) {
 	var out ConversationsV1ConversationWithParticipants
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/ConversationWithParticipants", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1356,7 +1356,7 @@ func (s *ConversationsV1Service) CreateConversationWithParticipants(ctx context.
 // CreateService adds a Conversations Service.
 func (s *ConversationsV1Service) CreateService(ctx context.Context, params CreateServiceRequest) (*ConversationsV1ChatService, error) {
 	var out ConversationsV1ChatService
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "POST", path: "/v1/Services", form: params.form(),
 	}, &out); err != nil {
 		return nil, err
@@ -1367,7 +1367,7 @@ func (s *ConversationsV1Service) CreateService(ctx context.Context, params Creat
 // ListServices returns a single page of Conversations Services.
 func (s *ConversationsV1Service) ListServices(ctx context.Context, params V1PageParams) (*ConversationsV1ChatServiceList, error) {
 	var out ConversationsV1ChatServiceList
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Services", query: params.query(),
 	}, &out); err != nil {
 		return nil, err
@@ -1378,7 +1378,7 @@ func (s *ConversationsV1Service) ListServices(ctx context.Context, params V1Page
 // FetchService retrieves a Conversations Service by sid.
 func (s *ConversationsV1Service) FetchService(ctx context.Context, chatServiceSid string) (*ConversationsV1ChatService, error) {
 	var out ConversationsV1ChatService
-	if err := s.c.t.do(ctx, requestOpts{
+	if err := s.t.do(ctx, requestOpts{
 		method: "GET", path: "/v1/Services/" + chatServiceSid,
 	}, &out); err != nil {
 		return nil, err
@@ -1388,7 +1388,7 @@ func (s *ConversationsV1Service) FetchService(ctx context.Context, chatServiceSi
 
 // DeleteService removes a Conversations Service.
 func (s *ConversationsV1Service) DeleteService(ctx context.Context, chatServiceSid string) error {
-	return s.c.t.do(ctx, requestOpts{
+	return s.t.do(ctx, requestOpts{
 		method: "DELETE", path: "/v1/Services/" + chatServiceSid,
 	}, nil)
 }

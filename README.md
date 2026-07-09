@@ -1,11 +1,11 @@
 # 📞 VoiceML Go SDK
 
-The official Go client for the [VoiceML REST API](https://voicetel.com/docs/api/v0.8/voiceml/) — Twilio-compatible outbound voice and answering-machine-detection from VoiceTel, with strongly-typed, context-aware Go.
+The official Go client for the [VoiceML REST API](https://voicetel.com/docs/api/v0.9/voiceml/) — Twilio-compatible outbound voice and answering-machine-detection from VoiceTel, with strongly-typed, context-aware Go.
 
-![Version](https://img.shields.io/badge/version-0.9.1-blue)
+![Version](https://img.shields.io/badge/version-0.9.2-blue)
 ![Go](https://img.shields.io/badge/go-1.21%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-green)
-![Tests](https://img.shields.io/badge/tests-46%20unit-brightgreen)
+![Tests](https://img.shields.io/badge/tests-83%20unit-brightgreen)
 ![Typed](https://img.shields.io/badge/typed-native%20structs-blue)
 
 ## 📚 Table of Contents
@@ -52,10 +52,12 @@ The official Go client for the [VoiceML REST API](https://voicetel.com/docs/api/
 - **Notifications** — fetch, list.
 - **SIP** — SIP Trunking: Domains (CRUD), CredentialLists + Credentials (CRUD), IpAccessControlLists + IpAddresses (CRUD), Domain↔ACL/CredentialList mappings (historical, Auth/Calls, Auth/Registrations namespaces).
 - **Routes V2** — Twilio Inbound Processing Region API: `c.RoutesV2.SipDomains.Fetch(ctx, domain)` / `Update(ctx, domain, params)`.
+- **Messaging Service** — Messaging Services (`MG…`) under `/v1/Services`: `c.MessagingV1.Services.Create / List / Fetch / Update / Delete`. Routed at the messaging host (see [Product hosts](#-product-hosts)).
+- **Pricing** — read-only voice / messaging / phone-number / trunking price lookups: `c.Pricing.V1.*` and `c.Pricing.V2.*`.
 - **Diagnostics** — `/health` deep probe, `/openapi.json` live spec fetch.
 
 ### 🧪 Tested
-- **60 unit tests** with `httptest`-based fakes exercising every service and every error path.
+- **83 unit tests** with `httptest`-based fakes exercising every service and every error path.
 - **Race-detector clean** (`go test -race ./...`).
 - **`go vet` and `gofmt` clean.**
 - **Integration test suite** that runs against a callBroadcast / VoiceML instance — gated by env vars, safe for CI.
@@ -139,7 +141,7 @@ if err != nil {
 fmt.Println(health.Status)
 ```
 
-> Don't have credentials yet? See **[voicetel.com/docs/api/v0.8/voiceml/](https://voicetel.com/docs/api/v0.8/voiceml/)** for issuance and rotation.
+> Don't have credentials yet? See **[voicetel.com/docs/api/v0.9/voiceml/](https://voicetel.com/docs/api/v0.9/voiceml/)** for issuance and rotation.
 
 ## 🗺️ Resource Reference
 
@@ -153,7 +155,21 @@ fmt.Println(health.Status)
 | `client.Messages` | `/Messages` | create, fetch, list, update, delete; To/From/DateSent filters; Body redaction; Status=canceled |
 | `client.IncomingPhoneNumbers` | `/IncomingPhoneNumbers` | list, fetch, update |
 | `client.Notifications` | `/Notifications` | fetch, list |
+| `client.MessagingV1.Services` | `/v1/Services` | Messaging Services (`MG…`): create, list, fetch, update, delete — routed at the messaging host |
+| `client.Pricing.V1` / `.V2` | `/v1`, `/v2` | read-only voice / messaging / phone-number / trunking price lookups |
 | `client.Diagnostics` | `/health`, `/openapi.json` | deep liveness probe; live spec fetch (unauthenticated) |
+
+### 🌐 Product hosts
+
+VoiceML mirrors Twilio's product-per-subdomain model. Two groups ride their own host, derived automatically from the configured `BaseURL`:
+
+| Group | Host (derived from `voiceml.voicetel.com`) |
+| --- | --- |
+| `client.ConversationsV1` | `conversations.voicetel.com` |
+| `client.MessagingV1` | `messaging.voicetel.com` |
+| everything else | `voiceml.voicetel.com` (default) |
+
+A Messaging Service (`MG…`) and a Conversation Service (`IS…`) share the identical `/v1/Services` path shape; the host is what disambiguates them on the wire. Derivation swaps the `voiceml` label only for `*.voicetel.com` hosts — any other `BaseURL` (a self-hosted instance, a test stub) keeps every group on that single host. Override a product host explicitly with `ClientOptions.MessagingBaseURL` / `ConversationsBaseURL`.
 
 Every method that takes a request body accepts a typed params struct:
 
@@ -330,7 +346,7 @@ go test -tags=integration ./...
 
 ## 📖 API Documentation
 
-- **Reference docs:** [voicetel.com/docs/api/v0.8/voiceml/](https://voicetel.com/docs/api/v0.8/voiceml/)
+- **Reference docs:** [voicetel.com/docs/api/v0.9/voiceml/](https://voicetel.com/docs/api/v0.9/voiceml/)
 - **Validator:** [voicetel.com/voiceml/validator/](https://voicetel.com/voiceml/validator/)
 - **SDK catalogue:** [voicetel.com/docs/voiceml-sdks/](https://voicetel.com/docs/voiceml-sdks/)
 - **Go package docs:** [pkg.go.dev/github.com/voicetel/voiceml-go-sdk](https://pkg.go.dev/github.com/voicetel/voiceml-go-sdk)

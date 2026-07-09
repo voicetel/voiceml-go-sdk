@@ -63,6 +63,20 @@ type ClientOptions struct {
 	// Defaults to DefaultBaseURL ("https://voiceml.voicetel.com").
 	BaseURL string
 
+	// MessagingBaseURL overrides the host the Messaging Service group
+	// (c.MessagingV1) targets. When empty it is derived from BaseURL by
+	// swapping the "voiceml" label for "messaging" on *.voicetel.com hosts
+	// (e.g. messaging.voicetel.com), and falls back to BaseURL for any other
+	// host. Set this to reach Messaging Service on a custom self-hosted subdomain.
+	MessagingBaseURL string
+
+	// ConversationsBaseURL overrides the host the Conversations group
+	// (c.ConversationsV1) targets. When empty it is derived from BaseURL by
+	// swapping the "voiceml" label for "conversations" on *.voicetel.com hosts
+	// (e.g. conversations.voicetel.com), and falls back to BaseURL for any
+	// other host.
+	ConversationsBaseURL string
+
 	// Timeout is the per-request timeout. Defaults to DefaultTimeout (30 s).
 	// Ignored if HTTPClient is provided — set the timeout on the passed client.
 	Timeout time.Duration
@@ -88,8 +102,12 @@ type ClientOptions struct {
 type Client struct {
 	// AccountSid is the account whose resources this client targets.
 	AccountSid string
-	// BaseURL is the resolved server URL (with trailing slashes stripped).
+	// BaseURL is the resolved default server URL (trailing slashes stripped).
 	BaseURL string
+	// MessagingBaseURL is the resolved host the Messaging Service group targets.
+	MessagingBaseURL string
+	// ConversationsBaseURL is the resolved host the Conversations group targets.
+	ConversationsBaseURL string
 
 	t *transport
 
@@ -145,6 +163,16 @@ type Client struct {
 	// and Tool/Knowledge-scoped Policies. JSON request bodies, no Account SID
 	// in path (account resolved from HTTP Basic auth).
 	AssistantsV1 *AssistantsV1Service
+
+	// MessagingV1 — Twilio messaging.twilio.com/v1 surface: Messaging Services
+	// (MG...) under /v1/Services. Routed at the messaging host, which is what
+	// disambiguates a Messaging Service from a Conversation Service (they share
+	// the /v1/Services path shape).
+	MessagingV1 *MessagingV1Service
+
+	// Pricing — Twilio pricing.twilio.com v1/v2 surface: read-only voice /
+	// messaging / phone-number / trunking price lookups on the default host.
+	Pricing *PricingService
 }
 
 // NewClient constructs a *Client. Returns *ConfigurationError if AccountSid
@@ -198,19 +226,34 @@ func NewClient(opts ClientOptions) (*Client, error) {
 		httpClient = &http.Client{Timeout: timeout, Transport: tr}
 	}
 
+	defaultURL, messagingURL, conversationsURL := resolveProductBaseURLs(
+		baseURL, opts.MessagingBaseURL, opts.ConversationsBaseURL,
+	)
+
 	t := &transport{
 		accountSid: opts.AccountSid,
 		apiKey:     apiKey,
-		baseURL:    baseURL,
+		baseURL:    defaultURL,
 		userAgent:  userAgent,
 		maxRetries: maxRetries,
 		httpClient: httpClient,
 	}
 
+	// Conversations and Messaging Service ride their own product subdomains
+	// (they share the /v1/Services path shape — the host is what disambiguates
+	// them). Each is a shallow copy of the default transport pinned to its
+	// product host; the underlying *http.Client is shared.
+	messagingT := *t
+	messagingT.baseURL = messagingURL
+	conversationsT := *t
+	conversationsT.baseURL = conversationsURL
+
 	c := &Client{
-		AccountSid: opts.AccountSid,
-		BaseURL:    baseURL,
-		t:          t,
+		AccountSid:           opts.AccountSid,
+		BaseURL:              defaultURL,
+		MessagingBaseURL:     messagingURL,
+		ConversationsBaseURL: conversationsURL,
+		t:                    t,
 	}
 	c.Calls = &CallsService{c: c}
 	c.Conferences = &ConferencesService{c: c}
@@ -230,9 +273,13 @@ func NewClient(opts ClientOptions) (*Client, error) {
 		SipDomains: &RoutesV2SipDomainsService{c: c},
 		c:          c,
 	}
-	c.ConversationsV1 = &ConversationsV1Service{c: c}
+	c.ConversationsV1 = &ConversationsV1Service{t: &conversationsT}
 	c.VoiceV1 = &VoiceV1Service{c: c}
 	c.AssistantsV1 = &AssistantsV1Service{c: c}
+	c.MessagingV1 = &MessagingV1Service{
+		Services: &MessagingV1ServicesService{t: &messagingT},
+	}
+	c.Pricing = newPricingService(t)
 	return c, nil
 }
 
