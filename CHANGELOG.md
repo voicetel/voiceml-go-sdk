@@ -6,7 +6,7 @@ follow [Semantic Versioning](https://semver.org/). Earlier releases are
 described on the [GitHub Releases](https://github.com/voicetel/voiceml-go-sdk/releases)
 page.
 
-## [Unreleased]
+## [0.9.3] - 2026-10-18
 
 ### Breaking changes
 
