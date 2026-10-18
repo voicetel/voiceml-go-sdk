@@ -1,8 +1,8 @@
 // Service-scoped Conversations v1 — every resource living under
-// /v1/Services/{ChatServiceSid}/. Twilio mirrors the account-scoped surface
-// inside a Chat Service realm, so most shapes are field-identical to their
-// account-level counterparts (declared in conversations_v1.go) with an extra
-// chat_service_sid field. The two configuration singletons (Notifications
+// /v1/Services/{ChatServiceSid}/. The service-scoped surface repeats the
+// account-scoped one inside a Chat Service realm, so most models have the
+// same fields as their account-level counterparts (declared in
+// conversations_v1.go) plus a chat_service_sid field. The two configuration singletons (Notifications
 // and WebhookConfiguration) are service-only — there is no account-scoped
 // twin.
 //
@@ -26,20 +26,20 @@ import (
 // Service realm. Field-identical to ConversationsV1Conversation; declared
 // separately so spec drift surfaces as a compile error.
 type ConversationsV1ServiceConversation struct {
-	AccountSid          *string           `json:"account_sid"`
-	ChatServiceSid      *string           `json:"chat_service_sid"`
-	MessagingServiceSid *string           `json:"messaging_service_sid"`
-	Sid                 *string           `json:"sid"`
-	FriendlyName        *string           `json:"friendly_name"`
-	UniqueName          *string           `json:"unique_name"`
-	Attributes          *string           `json:"attributes"`
-	State               string            `json:"state"`
-	DateCreated         *string           `json:"date_created"`
-	DateUpdated         *string           `json:"date_updated"`
-	Timers              map[string]string `json:"timers,omitempty"`
-	URL                 *string           `json:"url"`
-	Links               map[string]string `json:"links,omitempty"`
-	Bindings            map[string]string `json:"bindings,omitempty"`
+	AccountSid          *string        `json:"account_sid"`
+	ChatServiceSid      *string        `json:"chat_service_sid"`
+	MessagingServiceSid *string        `json:"messaging_service_sid"`
+	Sid                 *string        `json:"sid"`
+	FriendlyName        *string        `json:"friendly_name"`
+	UniqueName          *string        `json:"unique_name"`
+	Attributes          *string        `json:"attributes"`
+	State               string         `json:"state"`
+	DateCreated         *string        `json:"date_created"`
+	DateUpdated         *string        `json:"date_updated"`
+	Timers              map[string]any `json:"timers,omitempty"`
+	URL                 *string        `json:"url"`
+	Links               map[string]any `json:"links,omitempty"`
+	Bindings            map[string]any `json:"bindings,omitempty"`
 }
 
 // ConversationsV1ServiceConversationList is the paginated response.
@@ -51,22 +51,22 @@ type ConversationsV1ServiceConversationList struct {
 // ConversationsV1ServiceConversationMessage mirrors the account-scoped
 // message body with an added chat_service_sid.
 type ConversationsV1ServiceConversationMessage struct {
-	AccountSid      *string             `json:"account_sid"`
-	ChatServiceSid  *string             `json:"chat_service_sid"`
-	ConversationSid *string             `json:"conversation_sid"`
-	Sid             *string             `json:"sid"`
-	Index           int                 `json:"index"`
-	Author          *string             `json:"author"`
-	Body            *string             `json:"body"`
-	Media           []map[string]string `json:"media,omitempty"`
-	Attributes      *string             `json:"attributes"`
-	ParticipantSid  *string             `json:"participant_sid"`
-	DateCreated     *string             `json:"date_created"`
-	DateUpdated     *string             `json:"date_updated"`
-	URL             *string             `json:"url"`
-	Delivery        map[string]string   `json:"delivery,omitempty"`
-	Links           map[string]string   `json:"links,omitempty"`
-	ContentSid      *string             `json:"content_sid"`
+	AccountSid      *string          `json:"account_sid"`
+	ChatServiceSid  *string          `json:"chat_service_sid"`
+	ConversationSid *string          `json:"conversation_sid"`
+	Sid             *string          `json:"sid"`
+	Index           int              `json:"index"`
+	Author          *string          `json:"author"`
+	Body            *string          `json:"body"`
+	Media           []map[string]any `json:"media,omitempty"`
+	Attributes      *string          `json:"attributes"`
+	ParticipantSid  *string          `json:"participant_sid"`
+	DateCreated     *string          `json:"date_created"`
+	DateUpdated     *string          `json:"date_updated"`
+	URL             *string          `json:"url"`
+	Delivery        map[string]any   `json:"delivery,omitempty"`
+	Links           map[string]any   `json:"links,omitempty"`
+	ContentSid      *string          `json:"content_sid"`
 }
 
 // ConversationsV1ServiceConversationMessageList is the paginated response.
@@ -78,19 +78,19 @@ type ConversationsV1ServiceConversationMessageList struct {
 // ConversationsV1ServiceConversationParticipant mirrors the account-scoped
 // participant with an added chat_service_sid.
 type ConversationsV1ServiceConversationParticipant struct {
-	AccountSid           *string           `json:"account_sid"`
-	ChatServiceSid       *string           `json:"chat_service_sid"`
-	ConversationSid      *string           `json:"conversation_sid"`
-	Sid                  *string           `json:"sid"`
-	Identity             *string           `json:"identity"`
-	Attributes           *string           `json:"attributes"`
-	MessagingBinding     map[string]string `json:"messaging_binding,omitempty"`
-	RoleSid              *string           `json:"role_sid"`
-	DateCreated          *string           `json:"date_created"`
-	DateUpdated          *string           `json:"date_updated"`
-	URL                  *string           `json:"url"`
-	LastReadMessageIndex *int              `json:"last_read_message_index"`
-	LastReadTimestamp    *string           `json:"last_read_timestamp"`
+	AccountSid           *string        `json:"account_sid"`
+	ChatServiceSid       *string        `json:"chat_service_sid"`
+	ConversationSid      *string        `json:"conversation_sid"`
+	Sid                  *string        `json:"sid"`
+	Identity             *string        `json:"identity"`
+	Attributes           *string        `json:"attributes"`
+	MessagingBinding     map[string]any `json:"messaging_binding,omitempty"`
+	RoleSid              *string        `json:"role_sid"`
+	DateCreated          *string        `json:"date_created"`
+	DateUpdated          *string        `json:"date_updated"`
+	URL                  *string        `json:"url"`
+	LastReadMessageIndex *int           `json:"last_read_message_index"`
+	LastReadTimestamp    *string        `json:"last_read_timestamp"`
 }
 
 // ConversationsV1ServiceConversationParticipantList is the paginated response.
@@ -126,15 +126,15 @@ type ConversationsV1ServiceConversationMessageReceiptList struct {
 // ConversationsV1ServiceConversationScopedWebhook mirrors the account-scoped
 // scoped webhook with an added chat_service_sid.
 type ConversationsV1ServiceConversationScopedWebhook struct {
-	Sid             *string           `json:"sid"`
-	AccountSid      *string           `json:"account_sid"`
-	ChatServiceSid  *string           `json:"chat_service_sid"`
-	ConversationSid *string           `json:"conversation_sid"`
-	Target          *string           `json:"target"`
-	URL             *string           `json:"url"`
-	Configuration   map[string]string `json:"configuration,omitempty"`
-	DateCreated     *string           `json:"date_created"`
-	DateUpdated     *string           `json:"date_updated"`
+	Sid             *string        `json:"sid"`
+	AccountSid      *string        `json:"account_sid"`
+	ChatServiceSid  *string        `json:"chat_service_sid"`
+	ConversationSid *string        `json:"conversation_sid"`
+	Target          *string        `json:"target"`
+	URL             *string        `json:"url"`
+	Configuration   map[string]any `json:"configuration,omitempty"`
+	DateCreated     *string        `json:"date_created"`
+	DateUpdated     *string        `json:"date_updated"`
 }
 
 // ConversationsV1ServiceConversationScopedWebhookList is the paginated response.
@@ -146,41 +146,41 @@ type ConversationsV1ServiceConversationScopedWebhookList struct {
 // ConversationsV1ServiceConversationWithParticipants is the response of the
 // per-service composite-create endpoint. Mirrors ServiceConversation.
 type ConversationsV1ServiceConversationWithParticipants struct {
-	AccountSid          *string           `json:"account_sid"`
-	ChatServiceSid      *string           `json:"chat_service_sid"`
-	MessagingServiceSid *string           `json:"messaging_service_sid"`
-	Sid                 *string           `json:"sid"`
-	FriendlyName        *string           `json:"friendly_name"`
-	UniqueName          *string           `json:"unique_name"`
-	Attributes          *string           `json:"attributes"`
-	State               string            `json:"state"`
-	DateCreated         *string           `json:"date_created"`
-	DateUpdated         *string           `json:"date_updated"`
-	Timers              map[string]string `json:"timers,omitempty"`
-	Links               map[string]string `json:"links,omitempty"`
-	Bindings            map[string]string `json:"bindings,omitempty"`
-	URL                 *string           `json:"url"`
+	AccountSid          *string        `json:"account_sid"`
+	ChatServiceSid      *string        `json:"chat_service_sid"`
+	MessagingServiceSid *string        `json:"messaging_service_sid"`
+	Sid                 *string        `json:"sid"`
+	FriendlyName        *string        `json:"friendly_name"`
+	UniqueName          *string        `json:"unique_name"`
+	Attributes          *string        `json:"attributes"`
+	State               string         `json:"state"`
+	DateCreated         *string        `json:"date_created"`
+	DateUpdated         *string        `json:"date_updated"`
+	Timers              map[string]any `json:"timers,omitempty"`
+	Links               map[string]any `json:"links,omitempty"`
+	Bindings            map[string]any `json:"bindings,omitempty"`
+	URL                 *string        `json:"url"`
 }
 
 // ConversationsV1ServiceParticipantConversation mirrors the account-level
 // ParticipantConversation inverse-index row with an added chat_service_sid.
 type ConversationsV1ServiceParticipantConversation struct {
-	AccountSid                  *string           `json:"account_sid"`
-	ChatServiceSid              *string           `json:"chat_service_sid"`
-	ParticipantSid              *string           `json:"participant_sid"`
-	ParticipantUserSid          *string           `json:"participant_user_sid"`
-	ParticipantIdentity         *string           `json:"participant_identity"`
-	ParticipantMessagingBinding map[string]string `json:"participant_messaging_binding,omitempty"`
-	ConversationSid             *string           `json:"conversation_sid"`
-	ConversationUniqueName      *string           `json:"conversation_unique_name"`
-	ConversationFriendlyName    *string           `json:"conversation_friendly_name"`
-	ConversationAttributes      *string           `json:"conversation_attributes"`
-	ConversationDateCreated     *string           `json:"conversation_date_created"`
-	ConversationDateUpdated     *string           `json:"conversation_date_updated"`
-	ConversationCreatedBy       *string           `json:"conversation_created_by"`
-	ConversationState           string            `json:"conversation_state"`
-	ConversationTimers          map[string]string `json:"conversation_timers,omitempty"`
-	Links                       map[string]string `json:"links,omitempty"`
+	AccountSid                  *string        `json:"account_sid"`
+	ChatServiceSid              *string        `json:"chat_service_sid"`
+	ParticipantSid              *string        `json:"participant_sid"`
+	ParticipantUserSid          *string        `json:"participant_user_sid"`
+	ParticipantIdentity         *string        `json:"participant_identity"`
+	ParticipantMessagingBinding map[string]any `json:"participant_messaging_binding,omitempty"`
+	ConversationSid             *string        `json:"conversation_sid"`
+	ConversationUniqueName      *string        `json:"conversation_unique_name"`
+	ConversationFriendlyName    *string        `json:"conversation_friendly_name"`
+	ConversationAttributes      *string        `json:"conversation_attributes"`
+	ConversationDateCreated     *string        `json:"conversation_date_created"`
+	ConversationDateUpdated     *string        `json:"conversation_date_updated"`
+	ConversationCreatedBy       *string        `json:"conversation_created_by"`
+	ConversationState           string         `json:"conversation_state"`
+	ConversationTimers          map[string]any `json:"conversation_timers,omitempty"`
+	Links                       map[string]any `json:"links,omitempty"`
 }
 
 // ConversationsV1ServiceParticipantConversationList is the paginated response.
@@ -192,24 +192,24 @@ type ConversationsV1ServiceParticipantConversationList struct {
 // ConversationsV1ServiceUserConversation mirrors the account-level
 // UserConversation per-user view with an added chat_service_sid.
 type ConversationsV1ServiceUserConversation struct {
-	AccountSid           *string           `json:"account_sid"`
-	ChatServiceSid       *string           `json:"chat_service_sid"`
-	ConversationSid      *string           `json:"conversation_sid"`
-	UnreadMessagesCount  *int              `json:"unread_messages_count"`
-	LastReadMessageIndex *int              `json:"last_read_message_index"`
-	ParticipantSid       *string           `json:"participant_sid"`
-	UserSid              *string           `json:"user_sid"`
-	FriendlyName         *string           `json:"friendly_name"`
-	ConversationState    string            `json:"conversation_state"`
-	Timers               map[string]string `json:"timers,omitempty"`
-	Attributes           *string           `json:"attributes"`
-	DateCreated          *string           `json:"date_created"`
-	DateUpdated          *string           `json:"date_updated"`
-	CreatedBy            *string           `json:"created_by"`
-	NotificationLevel    string            `json:"notification_level"`
-	UniqueName           *string           `json:"unique_name"`
-	URL                  *string           `json:"url"`
-	Links                map[string]string `json:"links,omitempty"`
+	AccountSid           *string        `json:"account_sid"`
+	ChatServiceSid       *string        `json:"chat_service_sid"`
+	ConversationSid      *string        `json:"conversation_sid"`
+	UnreadMessagesCount  *int           `json:"unread_messages_count"`
+	LastReadMessageIndex *int           `json:"last_read_message_index"`
+	ParticipantSid       *string        `json:"participant_sid"`
+	UserSid              *string        `json:"user_sid"`
+	FriendlyName         *string        `json:"friendly_name"`
+	ConversationState    string         `json:"conversation_state"`
+	Timers               map[string]any `json:"timers,omitempty"`
+	Attributes           *string        `json:"attributes"`
+	DateCreated          *string        `json:"date_created"`
+	DateUpdated          *string        `json:"date_updated"`
+	CreatedBy            *string        `json:"created_by"`
+	NotificationLevel    string         `json:"notification_level"`
+	UniqueName           *string        `json:"unique_name"`
+	URL                  *string        `json:"url"`
+	Links                map[string]any `json:"links,omitempty"`
 }
 
 // ConversationsV1ServiceUserConversationList is the paginated response.
@@ -241,19 +241,19 @@ type ConversationsV1ServiceRoleList struct {
 // ConversationsV1ServiceUser mirrors the account-level User with an added
 // chat_service_sid.
 type ConversationsV1ServiceUser struct {
-	Sid            *string           `json:"sid"`
-	AccountSid     *string           `json:"account_sid"`
-	ChatServiceSid *string           `json:"chat_service_sid"`
-	RoleSid        *string           `json:"role_sid"`
-	Identity       *string           `json:"identity"`
-	FriendlyName   *string           `json:"friendly_name"`
-	Attributes     *string           `json:"attributes"`
-	IsOnline       *bool             `json:"is_online"`
-	IsNotifiable   *bool             `json:"is_notifiable"`
-	DateCreated    *string           `json:"date_created"`
-	DateUpdated    *string           `json:"date_updated"`
-	URL            *string           `json:"url"`
-	Links          map[string]string `json:"links,omitempty"`
+	Sid            *string        `json:"sid"`
+	AccountSid     *string        `json:"account_sid"`
+	ChatServiceSid *string        `json:"chat_service_sid"`
+	RoleSid        *string        `json:"role_sid"`
+	Identity       *string        `json:"identity"`
+	FriendlyName   *string        `json:"friendly_name"`
+	Attributes     *string        `json:"attributes"`
+	IsOnline       *bool          `json:"is_online"`
+	IsNotifiable   *bool          `json:"is_notifiable"`
+	DateCreated    *string        `json:"date_created"`
+	DateUpdated    *string        `json:"date_updated"`
+	URL            *string        `json:"url"`
+	Links          map[string]any `json:"links,omitempty"`
 }
 
 // ConversationsV1ServiceUserList is the paginated response.
@@ -287,25 +287,25 @@ type ConversationsV1ServiceBindingList struct {
 // ConversationsV1ServiceConfiguration is the per-service Configuration
 // singleton. Fetch + update only.
 type ConversationsV1ServiceConfiguration struct {
-	ChatServiceSid                    *string           `json:"chat_service_sid"`
-	DefaultConversationCreatorRoleSid *string           `json:"default_conversation_creator_role_sid"`
-	DefaultConversationRoleSid        *string           `json:"default_conversation_role_sid"`
-	DefaultChatServiceRoleSid         *string           `json:"default_chat_service_role_sid"`
-	URL                               *string           `json:"url"`
-	Links                             map[string]string `json:"links,omitempty"`
-	ReachabilityEnabled               *bool             `json:"reachability_enabled"`
+	ChatServiceSid                    *string        `json:"chat_service_sid"`
+	DefaultConversationCreatorRoleSid *string        `json:"default_conversation_creator_role_sid"`
+	DefaultConversationRoleSid        *string        `json:"default_conversation_role_sid"`
+	DefaultChatServiceRoleSid         *string        `json:"default_chat_service_role_sid"`
+	URL                               *string        `json:"url"`
+	Links                             map[string]any `json:"links,omitempty"`
+	ReachabilityEnabled               *bool          `json:"reachability_enabled"`
 }
 
 // ConversationsV1ServiceNotification is the per-service push Notification
 // configuration singleton. Fetch + update only.
 type ConversationsV1ServiceNotification struct {
-	AccountSid              *string                `json:"account_sid"`
-	ChatServiceSid          *string                `json:"chat_service_sid"`
-	NewMessage              map[string]interface{} `json:"new_message,omitempty"`
-	AddedToConversation     map[string]interface{} `json:"added_to_conversation,omitempty"`
-	RemovedFromConversation map[string]interface{} `json:"removed_from_conversation,omitempty"`
-	LogEnabled              *bool                  `json:"log_enabled"`
-	URL                     *string                `json:"url"`
+	AccountSid              *string        `json:"account_sid"`
+	ChatServiceSid          *string        `json:"chat_service_sid"`
+	NewMessage              map[string]any `json:"new_message,omitempty"`
+	AddedToConversation     map[string]any `json:"added_to_conversation,omitempty"`
+	RemovedFromConversation map[string]any `json:"removed_from_conversation,omitempty"`
+	LogEnabled              *bool          `json:"log_enabled"`
+	URL                     *string        `json:"url"`
 }
 
 // ConversationsV1ServiceWebhookConfiguration is the per-service Webhook
@@ -692,7 +692,7 @@ func (p UpdateServiceWebhookConfigurationRequest) form() url.Values {
 func (s *ConversationsV1Service) CreateServiceConversation(ctx context.Context, chatServiceSid string, params CreateServiceConversationRequest) (*ConversationsV1ServiceConversation, error) {
 	var out ConversationsV1ServiceConversation
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Conversations", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -703,7 +703,7 @@ func (s *ConversationsV1Service) CreateServiceConversation(ctx context.Context, 
 func (s *ConversationsV1Service) ListServiceConversations(ctx context.Context, chatServiceSid string, params V1PageParams) (*ConversationsV1ServiceConversationList, error) {
 	var out ConversationsV1ServiceConversationList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -714,7 +714,7 @@ func (s *ConversationsV1Service) ListServiceConversations(ctx context.Context, c
 func (s *ConversationsV1Service) FetchServiceConversation(ctx context.Context, chatServiceSid, conversationSid string) (*ConversationsV1ServiceConversation, error) {
 	var out ConversationsV1ServiceConversation
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -725,7 +725,7 @@ func (s *ConversationsV1Service) FetchServiceConversation(ctx context.Context, c
 func (s *ConversationsV1Service) UpdateServiceConversation(ctx context.Context, chatServiceSid, conversationSid string, params UpdateServiceConversationRequest) (*ConversationsV1ServiceConversation, error) {
 	var out ConversationsV1ServiceConversation
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -735,7 +735,7 @@ func (s *ConversationsV1Service) UpdateServiceConversation(ctx context.Context, 
 // DeleteServiceConversation removes a service-scoped Conversation.
 func (s *ConversationsV1Service) DeleteServiceConversation(ctx context.Context, chatServiceSid, conversationSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid,
+		method: "DELETE", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid),
 	}, nil)
 }
 
@@ -745,7 +745,7 @@ func (s *ConversationsV1Service) DeleteServiceConversation(ctx context.Context, 
 func (s *ConversationsV1Service) CreateServiceMessage(ctx context.Context, chatServiceSid, conversationSid string, params CreateServiceMessageRequest) (*ConversationsV1ServiceConversationMessage, error) {
 	var out ConversationsV1ServiceConversationMessage
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Messages", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Messages"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -756,7 +756,7 @@ func (s *ConversationsV1Service) CreateServiceMessage(ctx context.Context, chatS
 func (s *ConversationsV1Service) ListServiceMessages(ctx context.Context, chatServiceSid, conversationSid string, params V1PageParams) (*ConversationsV1ServiceConversationMessageList, error) {
 	var out ConversationsV1ServiceConversationMessageList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Messages", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Messages"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -767,7 +767,7 @@ func (s *ConversationsV1Service) ListServiceMessages(ctx context.Context, chatSe
 func (s *ConversationsV1Service) FetchServiceMessage(ctx context.Context, chatServiceSid, conversationSid, messageSid string) (*ConversationsV1ServiceConversationMessage, error) {
 	var out ConversationsV1ServiceConversationMessage
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Messages/" + messageSid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Messages", messageSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -778,7 +778,7 @@ func (s *ConversationsV1Service) FetchServiceMessage(ctx context.Context, chatSe
 func (s *ConversationsV1Service) UpdateServiceMessage(ctx context.Context, chatServiceSid, conversationSid, messageSid string, params UpdateServiceMessageRequest) (*ConversationsV1ServiceConversationMessage, error) {
 	var out ConversationsV1ServiceConversationMessage
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Messages/" + messageSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Messages", messageSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -788,7 +788,7 @@ func (s *ConversationsV1Service) UpdateServiceMessage(ctx context.Context, chatS
 // DeleteServiceMessage removes a service-scoped Message.
 func (s *ConversationsV1Service) DeleteServiceMessage(ctx context.Context, chatServiceSid, conversationSid, messageSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Messages/" + messageSid,
+		method: "DELETE", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Messages", messageSid),
 	}, nil)
 }
 
@@ -799,7 +799,7 @@ func (s *ConversationsV1Service) DeleteServiceMessage(ctx context.Context, chatS
 func (s *ConversationsV1Service) ListServiceMessageReceipts(ctx context.Context, chatServiceSid, conversationSid, messageSid string, params V1PageParams) (*ConversationsV1ServiceConversationMessageReceiptList, error) {
 	var out ConversationsV1ServiceConversationMessageReceiptList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Messages/" + messageSid + "/Receipts", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Messages", messageSid, "Receipts"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -811,7 +811,7 @@ func (s *ConversationsV1Service) ListServiceMessageReceipts(ctx context.Context,
 func (s *ConversationsV1Service) FetchServiceMessageReceipt(ctx context.Context, chatServiceSid, conversationSid, messageSid, sid string) (*ConversationsV1ServiceConversationMessageReceipt, error) {
 	var out ConversationsV1ServiceConversationMessageReceipt
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Messages/" + messageSid + "/Receipts/" + sid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Messages", messageSid, "Receipts", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -824,7 +824,7 @@ func (s *ConversationsV1Service) FetchServiceMessageReceipt(ctx context.Context,
 func (s *ConversationsV1Service) CreateServiceParticipant(ctx context.Context, chatServiceSid, conversationSid string, params CreateServiceParticipantRequest) (*ConversationsV1ServiceConversationParticipant, error) {
 	var out ConversationsV1ServiceConversationParticipant
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Participants", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Participants"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -835,7 +835,7 @@ func (s *ConversationsV1Service) CreateServiceParticipant(ctx context.Context, c
 func (s *ConversationsV1Service) ListServiceParticipants(ctx context.Context, chatServiceSid, conversationSid string, params V1PageParams) (*ConversationsV1ServiceConversationParticipantList, error) {
 	var out ConversationsV1ServiceConversationParticipantList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Participants", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Participants"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -846,7 +846,7 @@ func (s *ConversationsV1Service) ListServiceParticipants(ctx context.Context, ch
 func (s *ConversationsV1Service) FetchServiceParticipant(ctx context.Context, chatServiceSid, conversationSid, participantSid string) (*ConversationsV1ServiceConversationParticipant, error) {
 	var out ConversationsV1ServiceConversationParticipant
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Participants/" + participantSid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Participants", participantSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -857,7 +857,7 @@ func (s *ConversationsV1Service) FetchServiceParticipant(ctx context.Context, ch
 func (s *ConversationsV1Service) UpdateServiceParticipant(ctx context.Context, chatServiceSid, conversationSid, participantSid string, params UpdateServiceParticipantRequest) (*ConversationsV1ServiceConversationParticipant, error) {
 	var out ConversationsV1ServiceConversationParticipant
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Participants/" + participantSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Participants", participantSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -867,7 +867,7 @@ func (s *ConversationsV1Service) UpdateServiceParticipant(ctx context.Context, c
 // DeleteServiceParticipant removes a service-scoped Participant.
 func (s *ConversationsV1Service) DeleteServiceParticipant(ctx context.Context, chatServiceSid, conversationSid, participantSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Participants/" + participantSid,
+		method: "DELETE", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Participants", participantSid),
 	}, nil)
 }
 
@@ -877,7 +877,7 @@ func (s *ConversationsV1Service) DeleteServiceParticipant(ctx context.Context, c
 func (s *ConversationsV1Service) CreateServiceScopedWebhook(ctx context.Context, chatServiceSid, conversationSid string, params CreateServiceScopedWebhookRequest) (*ConversationsV1ServiceConversationScopedWebhook, error) {
 	var out ConversationsV1ServiceConversationScopedWebhook
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Webhooks", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Webhooks"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -888,7 +888,7 @@ func (s *ConversationsV1Service) CreateServiceScopedWebhook(ctx context.Context,
 func (s *ConversationsV1Service) ListServiceScopedWebhooks(ctx context.Context, chatServiceSid, conversationSid string, params V1PageParams) (*ConversationsV1ServiceConversationScopedWebhookList, error) {
 	var out ConversationsV1ServiceConversationScopedWebhookList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Webhooks", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Webhooks"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -899,7 +899,7 @@ func (s *ConversationsV1Service) ListServiceScopedWebhooks(ctx context.Context, 
 func (s *ConversationsV1Service) FetchServiceScopedWebhook(ctx context.Context, chatServiceSid, conversationSid, webhookSid string) (*ConversationsV1ServiceConversationScopedWebhook, error) {
 	var out ConversationsV1ServiceConversationScopedWebhook
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Webhooks/" + webhookSid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Webhooks", webhookSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -910,7 +910,7 @@ func (s *ConversationsV1Service) FetchServiceScopedWebhook(ctx context.Context, 
 func (s *ConversationsV1Service) UpdateServiceScopedWebhook(ctx context.Context, chatServiceSid, conversationSid, webhookSid string, params UpdateServiceScopedWebhookRequest) (*ConversationsV1ServiceConversationScopedWebhook, error) {
 	var out ConversationsV1ServiceConversationScopedWebhook
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Webhooks/" + webhookSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Webhooks", webhookSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -920,7 +920,7 @@ func (s *ConversationsV1Service) UpdateServiceScopedWebhook(ctx context.Context,
 // DeleteServiceScopedWebhook removes a service-scoped Scoped Webhook.
 func (s *ConversationsV1Service) DeleteServiceScopedWebhook(ctx context.Context, chatServiceSid, conversationSid, webhookSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + chatServiceSid + "/Conversations/" + conversationSid + "/Webhooks/" + webhookSid,
+		method: "DELETE", path: apiRoute("/v1", "Services", chatServiceSid, "Conversations", conversationSid, "Webhooks", webhookSid),
 	}, nil)
 }
 
@@ -931,7 +931,7 @@ func (s *ConversationsV1Service) DeleteServiceScopedWebhook(ctx context.Context,
 func (s *ConversationsV1Service) CreateServiceConversationWithParticipants(ctx context.Context, chatServiceSid string, params CreateServiceConversationWithParticipantsRequest) (*ConversationsV1ServiceConversationWithParticipants, error) {
 	var out ConversationsV1ServiceConversationWithParticipants
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/ConversationWithParticipants", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "ConversationWithParticipants"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -946,7 +946,7 @@ func (s *ConversationsV1Service) CreateServiceConversationWithParticipants(ctx c
 func (s *ConversationsV1Service) ListServiceParticipantConversations(ctx context.Context, chatServiceSid string, params ListServiceParticipantConversationsParams) (*ConversationsV1ServiceParticipantConversationList, error) {
 	var out ConversationsV1ServiceParticipantConversationList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/ParticipantConversations", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "ParticipantConversations"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -960,7 +960,7 @@ func (s *ConversationsV1Service) ListServiceParticipantConversations(ctx context
 func (s *ConversationsV1Service) ListServiceUserConversations(ctx context.Context, chatServiceSid, userSid string, params V1PageParams) (*ConversationsV1ServiceUserConversationList, error) {
 	var out ConversationsV1ServiceUserConversationList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Users/" + userSid + "/Conversations", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Users", userSid, "Conversations"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -973,7 +973,7 @@ func (s *ConversationsV1Service) ListServiceUserConversations(ctx context.Contex
 func (s *ConversationsV1Service) CreateServiceRole(ctx context.Context, chatServiceSid string, params CreateServiceRoleRequest) (*ConversationsV1ServiceRole, error) {
 	var out ConversationsV1ServiceRole
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Roles", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Roles"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -984,7 +984,7 @@ func (s *ConversationsV1Service) CreateServiceRole(ctx context.Context, chatServ
 func (s *ConversationsV1Service) ListServiceRoles(ctx context.Context, chatServiceSid string, params V1PageParams) (*ConversationsV1ServiceRoleList, error) {
 	var out ConversationsV1ServiceRoleList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Roles", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Roles"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -995,7 +995,7 @@ func (s *ConversationsV1Service) ListServiceRoles(ctx context.Context, chatServi
 func (s *ConversationsV1Service) FetchServiceRole(ctx context.Context, chatServiceSid, sid string) (*ConversationsV1ServiceRole, error) {
 	var out ConversationsV1ServiceRole
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Roles/" + sid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Roles", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1006,7 +1006,7 @@ func (s *ConversationsV1Service) FetchServiceRole(ctx context.Context, chatServi
 func (s *ConversationsV1Service) UpdateServiceRole(ctx context.Context, chatServiceSid, sid string, params UpdateServiceRoleRequest) (*ConversationsV1ServiceRole, error) {
 	var out ConversationsV1ServiceRole
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Roles/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Roles", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1016,7 +1016,7 @@ func (s *ConversationsV1Service) UpdateServiceRole(ctx context.Context, chatServ
 // DeleteServiceRole removes a service-scoped Role.
 func (s *ConversationsV1Service) DeleteServiceRole(ctx context.Context, chatServiceSid, sid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + chatServiceSid + "/Roles/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "Services", chatServiceSid, "Roles", sid),
 	}, nil)
 }
 
@@ -1026,7 +1026,7 @@ func (s *ConversationsV1Service) DeleteServiceRole(ctx context.Context, chatServ
 func (s *ConversationsV1Service) CreateServiceUser(ctx context.Context, chatServiceSid string, params CreateServiceUserRequest) (*ConversationsV1ServiceUser, error) {
 	var out ConversationsV1ServiceUser
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Users", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Users"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1037,7 +1037,7 @@ func (s *ConversationsV1Service) CreateServiceUser(ctx context.Context, chatServ
 func (s *ConversationsV1Service) ListServiceUsers(ctx context.Context, chatServiceSid string, params V1PageParams) (*ConversationsV1ServiceUserList, error) {
 	var out ConversationsV1ServiceUserList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Users", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Users"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1048,7 +1048,7 @@ func (s *ConversationsV1Service) ListServiceUsers(ctx context.Context, chatServi
 func (s *ConversationsV1Service) FetchServiceUser(ctx context.Context, chatServiceSid, sid string) (*ConversationsV1ServiceUser, error) {
 	var out ConversationsV1ServiceUser
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Users/" + sid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Users", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1059,7 +1059,7 @@ func (s *ConversationsV1Service) FetchServiceUser(ctx context.Context, chatServi
 func (s *ConversationsV1Service) UpdateServiceUser(ctx context.Context, chatServiceSid, sid string, params UpdateServiceUserRequest) (*ConversationsV1ServiceUser, error) {
 	var out ConversationsV1ServiceUser
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Users/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Users", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1069,7 +1069,7 @@ func (s *ConversationsV1Service) UpdateServiceUser(ctx context.Context, chatServ
 // DeleteServiceUser removes a service-scoped User.
 func (s *ConversationsV1Service) DeleteServiceUser(ctx context.Context, chatServiceSid, sid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + chatServiceSid + "/Users/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "Services", chatServiceSid, "Users", sid),
 	}, nil)
 }
 
@@ -1080,7 +1080,7 @@ func (s *ConversationsV1Service) DeleteServiceUser(ctx context.Context, chatServ
 func (s *ConversationsV1Service) ListServiceBindings(ctx context.Context, chatServiceSid string, params ListServiceBindingsParams) (*ConversationsV1ServiceBindingList, error) {
 	var out ConversationsV1ServiceBindingList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Bindings", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Bindings"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1091,7 +1091,7 @@ func (s *ConversationsV1Service) ListServiceBindings(ctx context.Context, chatSe
 func (s *ConversationsV1Service) FetchServiceBinding(ctx context.Context, chatServiceSid, sid string) (*ConversationsV1ServiceBinding, error) {
 	var out ConversationsV1ServiceBinding
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Bindings/" + sid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Bindings", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1101,7 +1101,7 @@ func (s *ConversationsV1Service) FetchServiceBinding(ctx context.Context, chatSe
 // DeleteServiceBinding removes a push Binding.
 func (s *ConversationsV1Service) DeleteServiceBinding(ctx context.Context, chatServiceSid, sid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + chatServiceSid + "/Bindings/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "Services", chatServiceSid, "Bindings", sid),
 	}, nil)
 }
 
@@ -1111,7 +1111,7 @@ func (s *ConversationsV1Service) DeleteServiceBinding(ctx context.Context, chatS
 func (s *ConversationsV1Service) FetchServiceConfiguration(ctx context.Context, chatServiceSid string) (*ConversationsV1ServiceConfiguration, error) {
 	var out ConversationsV1ServiceConfiguration
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Configuration",
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Configuration"),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1122,7 +1122,7 @@ func (s *ConversationsV1Service) FetchServiceConfiguration(ctx context.Context, 
 func (s *ConversationsV1Service) UpdateServiceConfiguration(ctx context.Context, chatServiceSid string, params UpdateServiceConfigurationRequest) (*ConversationsV1ServiceConfiguration, error) {
 	var out ConversationsV1ServiceConfiguration
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Configuration", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Configuration"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1136,7 +1136,7 @@ func (s *ConversationsV1Service) UpdateServiceConfiguration(ctx context.Context,
 func (s *ConversationsV1Service) FetchServiceNotification(ctx context.Context, chatServiceSid string) (*ConversationsV1ServiceNotification, error) {
 	var out ConversationsV1ServiceNotification
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Configuration/Notifications",
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Configuration", "Notifications"),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1148,7 +1148,7 @@ func (s *ConversationsV1Service) FetchServiceNotification(ctx context.Context, c
 func (s *ConversationsV1Service) UpdateServiceNotification(ctx context.Context, chatServiceSid string, params UpdateServiceNotificationRequest) (*ConversationsV1ServiceNotification, error) {
 	var out ConversationsV1ServiceNotification
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Configuration/Notifications", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Configuration", "Notifications"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1162,7 +1162,7 @@ func (s *ConversationsV1Service) UpdateServiceNotification(ctx context.Context, 
 func (s *ConversationsV1Service) FetchServiceWebhookConfiguration(ctx context.Context, chatServiceSid string) (*ConversationsV1ServiceWebhookConfiguration, error) {
 	var out ConversationsV1ServiceWebhookConfiguration
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid + "/Configuration/Webhooks",
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid, "Configuration", "Webhooks"),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1174,7 +1174,7 @@ func (s *ConversationsV1Service) FetchServiceWebhookConfiguration(ctx context.Co
 func (s *ConversationsV1Service) UpdateServiceWebhookConfiguration(ctx context.Context, chatServiceSid string, params UpdateServiceWebhookConfigurationRequest) (*ConversationsV1ServiceWebhookConfiguration, error) {
 	var out ConversationsV1ServiceWebhookConfiguration
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + chatServiceSid + "/Configuration/Webhooks", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", chatServiceSid, "Configuration", "Webhooks"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}

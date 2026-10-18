@@ -5,12 +5,13 @@ import (
 	"net/url"
 )
 
-// NotificationsService is the account-scoped /Notifications resource group
-// (compat stubs — always empty list, fetch returns 404).
+// NotificationsService is the account-scoped /Notifications resource
+// group: alert-log entries recorded when a TwiML fetch or parse fails.
 type NotificationsService struct{ c *Client }
 
 // ListNotificationsParams are query params for GET /Notifications and the
-// call-scoped GET /Calls/{sid}/Notifications compat stubs.
+// call-scoped GET /Calls/{sid}/Notifications. Log is 0 (error) or 1
+// (warning); MessageDate is a YYYY-MM-DD date (see Date).
 type ListNotificationsParams struct {
 	Page          *int
 	PageSize      *int
@@ -33,9 +34,9 @@ func (p ListNotificationsParams) query() url.Values {
 	return v
 }
 
-// List hits the account-wide compat stub at /Notifications.
-func (s *NotificationsService) List(ctx context.Context, params ListNotificationsParams) (*NotificationsList, error) {
-	var out NotificationsList
+// List returns a page of the account's notifications. GET /Notifications.
+func (s *NotificationsService) List(ctx context.Context, params ListNotificationsParams) (*NotificationList, error) {
+	var out NotificationList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Notifications"),
@@ -47,9 +48,15 @@ func (s *NotificationsService) List(ctx context.Context, params ListNotification
 	return &out, nil
 }
 
-// Get fetches a single account notification. Always 404 today (compat stub).
-func (s *NotificationsService) Get(ctx context.Context, notificationSid string) (map[string]any, error) {
-	var out map[string]any
+// Iterate walks every notification on the account lazily.
+func (s *NotificationsService) Iterate(ctx context.Context, params ListNotificationsParams) *Pager[Notification] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Notifications"), query: params.query()},
+		func(l *NotificationList) ([]Notification, PageLinks) { return l.Notifications, l.Page })
+}
+
+// Get fetches a single account notification. GET /Notifications/{Sid}.
+func (s *NotificationsService) Get(ctx context.Context, notificationSid string) (*Notification, error) {
+	var out Notification
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Notifications", notificationSid),
@@ -57,5 +64,5 @@ func (s *NotificationsService) Get(ctx context.Context, notificationSid string) 
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return &out, nil
 }

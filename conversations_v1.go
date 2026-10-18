@@ -1,4 +1,4 @@
-// Conversations v1 (conversations.twilio.com/v1) resources: Conversation +
+// Twilio-compatible Conversations v1 resources: Conversation +
 // nested Messages / Participants / Webhooks / Receipts, account-scoped Roles,
 // Users + UserConversations, push Credentials, the Configuration singleton +
 // its Webhooks + Addresses sub-resources, ParticipantConversation listings,
@@ -25,20 +25,20 @@ import (
 // tracks lifecycle (initializing → active → inactive → closed). Attributes
 // is server-stringified JSON.
 type ConversationsV1Conversation struct {
-	AccountSid          *string           `json:"account_sid"`
-	ChatServiceSid      *string           `json:"chat_service_sid"`
-	MessagingServiceSid *string           `json:"messaging_service_sid"`
-	Sid                 *string           `json:"sid"`
-	FriendlyName        *string           `json:"friendly_name"`
-	UniqueName          *string           `json:"unique_name"`
-	Attributes          *string           `json:"attributes"`
-	State               string            `json:"state"`
-	DateCreated         *string           `json:"date_created"`
-	DateUpdated         *string           `json:"date_updated"`
-	Timers              map[string]string `json:"timers,omitempty"`
-	URL                 *string           `json:"url"`
-	Links               map[string]string `json:"links,omitempty"`
-	Bindings            map[string]string `json:"bindings,omitempty"`
+	AccountSid          *string        `json:"account_sid"`
+	ChatServiceSid      *string        `json:"chat_service_sid"`
+	MessagingServiceSid *string        `json:"messaging_service_sid"`
+	Sid                 *string        `json:"sid"`
+	FriendlyName        *string        `json:"friendly_name"`
+	UniqueName          *string        `json:"unique_name"`
+	Attributes          *string        `json:"attributes"`
+	State               string         `json:"state"`
+	DateCreated         *string        `json:"date_created"`
+	DateUpdated         *string        `json:"date_updated"`
+	Timers              map[string]any `json:"timers,omitempty"`
+	URL                 *string        `json:"url"`
+	Links               map[string]any `json:"links,omitempty"`
+	Bindings            map[string]any `json:"bindings,omitempty"`
 }
 
 // ConversationsV1ConversationList is the paginated /v1/Conversations response.
@@ -50,21 +50,21 @@ type ConversationsV1ConversationList struct {
 // ConversationsV1ConversationMessage is a single message inside a
 // Conversation (IM...). Index is monotonically increasing per conversation.
 type ConversationsV1ConversationMessage struct {
-	AccountSid      *string             `json:"account_sid"`
-	ConversationSid *string             `json:"conversation_sid"`
-	Sid             *string             `json:"sid"`
-	Index           int                 `json:"index"`
-	Author          *string             `json:"author"`
-	Body            *string             `json:"body"`
-	Media           []map[string]string `json:"media,omitempty"`
-	Attributes      *string             `json:"attributes"`
-	ParticipantSid  *string             `json:"participant_sid"`
-	DateCreated     *string             `json:"date_created"`
-	DateUpdated     *string             `json:"date_updated"`
-	URL             *string             `json:"url"`
-	Delivery        map[string]string   `json:"delivery,omitempty"`
-	Links           map[string]string   `json:"links,omitempty"`
-	ContentSid      *string             `json:"content_sid"`
+	AccountSid      *string          `json:"account_sid"`
+	ConversationSid *string          `json:"conversation_sid"`
+	Sid             *string          `json:"sid"`
+	Index           int              `json:"index"`
+	Author          *string          `json:"author"`
+	Body            *string          `json:"body"`
+	Media           []map[string]any `json:"media,omitempty"`
+	Attributes      *string          `json:"attributes"`
+	ParticipantSid  *string          `json:"participant_sid"`
+	DateCreated     *string          `json:"date_created"`
+	DateUpdated     *string          `json:"date_updated"`
+	URL             *string          `json:"url"`
+	Delivery        map[string]any   `json:"delivery,omitempty"`
+	Links           map[string]any   `json:"links,omitempty"`
+	ContentSid      *string          `json:"content_sid"`
 }
 
 // ConversationsV1ConversationMessageList is the paginated nested-message response.
@@ -77,18 +77,18 @@ type ConversationsV1ConversationMessageList struct {
 // Conversation (MB...). Identity is set for chat; MessagingBinding is set
 // for SMS/WhatsApp.
 type ConversationsV1ConversationParticipant struct {
-	AccountSid           *string           `json:"account_sid"`
-	ConversationSid      *string           `json:"conversation_sid"`
-	Sid                  *string           `json:"sid"`
-	Identity             *string           `json:"identity"`
-	Attributes           *string           `json:"attributes"`
-	MessagingBinding     map[string]string `json:"messaging_binding,omitempty"`
-	RoleSid              *string           `json:"role_sid"`
-	DateCreated          *string           `json:"date_created"`
-	DateUpdated          *string           `json:"date_updated"`
-	URL                  *string           `json:"url"`
-	LastReadMessageIndex *int              `json:"last_read_message_index"`
-	LastReadTimestamp    *string           `json:"last_read_timestamp"`
+	AccountSid           *string        `json:"account_sid"`
+	ConversationSid      *string        `json:"conversation_sid"`
+	Sid                  *string        `json:"sid"`
+	Identity             *string        `json:"identity"`
+	Attributes           *string        `json:"attributes"`
+	MessagingBinding     map[string]any `json:"messaging_binding,omitempty"`
+	RoleSid              *string        `json:"role_sid"`
+	DateCreated          *string        `json:"date_created"`
+	DateUpdated          *string        `json:"date_updated"`
+	URL                  *string        `json:"url"`
+	LastReadMessageIndex *int           `json:"last_read_message_index"`
+	LastReadTimestamp    *string        `json:"last_read_timestamp"`
 }
 
 // ConversationsV1ConversationParticipantList is the paginated nested-participant response.
@@ -123,14 +123,14 @@ type ConversationsV1ConversationMessageReceiptList struct {
 // ConversationsV1ConversationScopedWebhook is a webhook attached to a
 // specific Conversation (WH...). Target is "webhook", "trigger", or "studio".
 type ConversationsV1ConversationScopedWebhook struct {
-	Sid             *string           `json:"sid"`
-	AccountSid      *string           `json:"account_sid"`
-	ConversationSid *string           `json:"conversation_sid"`
-	Target          *string           `json:"target"`
-	URL             *string           `json:"url"`
-	Configuration   map[string]string `json:"configuration,omitempty"`
-	DateCreated     *string           `json:"date_created"`
-	DateUpdated     *string           `json:"date_updated"`
+	Sid             *string        `json:"sid"`
+	AccountSid      *string        `json:"account_sid"`
+	ConversationSid *string        `json:"conversation_sid"`
+	Target          *string        `json:"target"`
+	URL             *string        `json:"url"`
+	Configuration   map[string]any `json:"configuration,omitempty"`
+	DateCreated     *string        `json:"date_created"`
+	DateUpdated     *string        `json:"date_updated"`
 }
 
 // ConversationsV1ConversationScopedWebhookList is the paginated
@@ -162,19 +162,19 @@ type ConversationsV1RoleList struct {
 // ConversationsV1User is an end-user identity that can participate in
 // conversations (US...).
 type ConversationsV1User struct {
-	Sid            *string           `json:"sid"`
-	AccountSid     *string           `json:"account_sid"`
-	ChatServiceSid *string           `json:"chat_service_sid"`
-	RoleSid        *string           `json:"role_sid"`
-	Identity       *string           `json:"identity"`
-	FriendlyName   *string           `json:"friendly_name"`
-	Attributes     *string           `json:"attributes"`
-	IsOnline       *bool             `json:"is_online"`
-	IsNotifiable   *bool             `json:"is_notifiable"`
-	DateCreated    *string           `json:"date_created"`
-	DateUpdated    *string           `json:"date_updated"`
-	URL            *string           `json:"url"`
-	Links          map[string]string `json:"links,omitempty"`
+	Sid            *string        `json:"sid"`
+	AccountSid     *string        `json:"account_sid"`
+	ChatServiceSid *string        `json:"chat_service_sid"`
+	RoleSid        *string        `json:"role_sid"`
+	Identity       *string        `json:"identity"`
+	FriendlyName   *string        `json:"friendly_name"`
+	Attributes     *string        `json:"attributes"`
+	IsOnline       *bool          `json:"is_online"`
+	IsNotifiable   *bool          `json:"is_notifiable"`
+	DateCreated    *string        `json:"date_created"`
+	DateUpdated    *string        `json:"date_updated"`
+	URL            *string        `json:"url"`
+	Links          map[string]any `json:"links,omitempty"`
 }
 
 // ConversationsV1UserList is the paginated /v1/Users response.
@@ -205,13 +205,13 @@ type ConversationsV1CredentialList struct {
 // ConversationsV1Configuration is the account-global Conversations
 // Configuration singleton. Defaults when unset; fetch + update only.
 type ConversationsV1Configuration struct {
-	AccountSid                 *string           `json:"account_sid"`
-	DefaultChatServiceSid      *string           `json:"default_chat_service_sid"`
-	DefaultMessagingServiceSid *string           `json:"default_messaging_service_sid"`
-	DefaultInactiveTimer       *string           `json:"default_inactive_timer"`
-	DefaultClosedTimer         *string           `json:"default_closed_timer"`
-	URL                        *string           `json:"url"`
-	Links                      map[string]string `json:"links,omitempty"`
+	AccountSid                 *string        `json:"account_sid"`
+	DefaultChatServiceSid      *string        `json:"default_chat_service_sid"`
+	DefaultMessagingServiceSid *string        `json:"default_messaging_service_sid"`
+	DefaultInactiveTimer       *string        `json:"default_inactive_timer"`
+	DefaultClosedTimer         *string        `json:"default_closed_timer"`
+	URL                        *string        `json:"url"`
+	Links                      map[string]any `json:"links,omitempty"`
 }
 
 // ConversationsV1ConfigurationWebhook is the account-global Conversation
@@ -229,16 +229,16 @@ type ConversationsV1ConfigurationWebhook struct {
 // ConversationsV1ConfigAddress is an account-level inbound address (IG...).
 // Type names a messaging channel ("sms", "whatsapp", ...).
 type ConversationsV1ConfigAddress struct {
-	Sid            *string           `json:"sid"`
-	AccountSid     *string           `json:"account_sid"`
-	Type           *string           `json:"type"`
-	Address        *string           `json:"address"`
-	FriendlyName   *string           `json:"friendly_name"`
-	AutoCreation   map[string]string `json:"auto_creation,omitempty"`
-	DateCreated    *string           `json:"date_created"`
-	DateUpdated    *string           `json:"date_updated"`
-	URL            *string           `json:"url"`
-	AddressCountry *string           `json:"address_country"`
+	Sid            *string        `json:"sid"`
+	AccountSid     *string        `json:"account_sid"`
+	Type           *string        `json:"type"`
+	Address        *string        `json:"address"`
+	FriendlyName   *string        `json:"friendly_name"`
+	AutoCreation   map[string]any `json:"auto_creation,omitempty"`
+	DateCreated    *string        `json:"date_created"`
+	DateUpdated    *string        `json:"date_updated"`
+	URL            *string        `json:"url"`
+	AddressCountry *string        `json:"address_country"`
 }
 
 // ConversationsV1ConfigAddressList is the paginated /v1/Configuration/Addresses response.
@@ -251,22 +251,22 @@ type ConversationsV1ConfigAddressList struct {
 // membership in a conversation — the GET /v1/ParticipantConversations
 // inverse-index row. Read-only (no sid of its own).
 type ConversationsV1ParticipantConversation struct {
-	AccountSid                  *string           `json:"account_sid"`
-	ChatServiceSid              *string           `json:"chat_service_sid"`
-	ParticipantSid              *string           `json:"participant_sid"`
-	ParticipantUserSid          *string           `json:"participant_user_sid"`
-	ParticipantIdentity         *string           `json:"participant_identity"`
-	ParticipantMessagingBinding map[string]string `json:"participant_messaging_binding,omitempty"`
-	ConversationSid             *string           `json:"conversation_sid"`
-	ConversationUniqueName      *string           `json:"conversation_unique_name"`
-	ConversationFriendlyName    *string           `json:"conversation_friendly_name"`
-	ConversationAttributes      *string           `json:"conversation_attributes"`
-	ConversationDateCreated     *string           `json:"conversation_date_created"`
-	ConversationDateUpdated     *string           `json:"conversation_date_updated"`
-	ConversationCreatedBy       *string           `json:"conversation_created_by"`
-	ConversationState           string            `json:"conversation_state"`
-	ConversationTimers          map[string]string `json:"conversation_timers,omitempty"`
-	Links                       map[string]string `json:"links,omitempty"`
+	AccountSid                  *string        `json:"account_sid"`
+	ChatServiceSid              *string        `json:"chat_service_sid"`
+	ParticipantSid              *string        `json:"participant_sid"`
+	ParticipantUserSid          *string        `json:"participant_user_sid"`
+	ParticipantIdentity         *string        `json:"participant_identity"`
+	ParticipantMessagingBinding map[string]any `json:"participant_messaging_binding,omitempty"`
+	ConversationSid             *string        `json:"conversation_sid"`
+	ConversationUniqueName      *string        `json:"conversation_unique_name"`
+	ConversationFriendlyName    *string        `json:"conversation_friendly_name"`
+	ConversationAttributes      *string        `json:"conversation_attributes"`
+	ConversationDateCreated     *string        `json:"conversation_date_created"`
+	ConversationDateUpdated     *string        `json:"conversation_date_updated"`
+	ConversationCreatedBy       *string        `json:"conversation_created_by"`
+	ConversationState           string         `json:"conversation_state"`
+	ConversationTimers          map[string]any `json:"conversation_timers,omitempty"`
+	Links                       map[string]any `json:"links,omitempty"`
 }
 
 // ConversationsV1ParticipantConversationList is the paginated response.
@@ -276,47 +276,47 @@ type ConversationsV1ParticipantConversationList struct {
 }
 
 // ConversationsV1ConversationWithParticipants is the response shape of the
-// /v1/ConversationWithParticipants composite-create endpoint. Mirrors
-// ConversationsV1Conversation; declared separately so the spec field-by-
-// field parity remains clear.
+// /v1/ConversationWithParticipants composite-create endpoint. It has the
+// same fields as ConversationsV1Conversation; declared separately so the
+// field-by-field mapping to the spec stays clear.
 type ConversationsV1ConversationWithParticipants struct {
-	AccountSid          *string           `json:"account_sid"`
-	ChatServiceSid      *string           `json:"chat_service_sid"`
-	MessagingServiceSid *string           `json:"messaging_service_sid"`
-	Sid                 *string           `json:"sid"`
-	FriendlyName        *string           `json:"friendly_name"`
-	UniqueName          *string           `json:"unique_name"`
-	Attributes          *string           `json:"attributes"`
-	State               string            `json:"state"`
-	DateCreated         *string           `json:"date_created"`
-	DateUpdated         *string           `json:"date_updated"`
-	Timers              map[string]string `json:"timers,omitempty"`
-	Links               map[string]string `json:"links,omitempty"`
-	Bindings            map[string]string `json:"bindings,omitempty"`
-	URL                 *string           `json:"url"`
+	AccountSid          *string        `json:"account_sid"`
+	ChatServiceSid      *string        `json:"chat_service_sid"`
+	MessagingServiceSid *string        `json:"messaging_service_sid"`
+	Sid                 *string        `json:"sid"`
+	FriendlyName        *string        `json:"friendly_name"`
+	UniqueName          *string        `json:"unique_name"`
+	Attributes          *string        `json:"attributes"`
+	State               string         `json:"state"`
+	DateCreated         *string        `json:"date_created"`
+	DateUpdated         *string        `json:"date_updated"`
+	Timers              map[string]any `json:"timers,omitempty"`
+	Links               map[string]any `json:"links,omitempty"`
+	Bindings            map[string]any `json:"bindings,omitempty"`
+	URL                 *string        `json:"url"`
 }
 
 // ConversationsV1UserConversation is the per-user view of a Conversation
 // membership — the GET /v1/Users/{Sid}/Conversations row.
 type ConversationsV1UserConversation struct {
-	AccountSid           *string           `json:"account_sid"`
-	ChatServiceSid       *string           `json:"chat_service_sid"`
-	ConversationSid      *string           `json:"conversation_sid"`
-	UnreadMessagesCount  *int              `json:"unread_messages_count"`
-	LastReadMessageIndex *int              `json:"last_read_message_index"`
-	ParticipantSid       *string           `json:"participant_sid"`
-	UserSid              *string           `json:"user_sid"`
-	FriendlyName         *string           `json:"friendly_name"`
-	ConversationState    string            `json:"conversation_state"`
-	Timers               map[string]string `json:"timers,omitempty"`
-	Attributes           *string           `json:"attributes"`
-	DateCreated          *string           `json:"date_created"`
-	DateUpdated          *string           `json:"date_updated"`
-	CreatedBy            *string           `json:"created_by"`
-	NotificationLevel    string            `json:"notification_level"`
-	UniqueName           *string           `json:"unique_name"`
-	URL                  *string           `json:"url"`
-	Links                map[string]string `json:"links,omitempty"`
+	AccountSid           *string        `json:"account_sid"`
+	ChatServiceSid       *string        `json:"chat_service_sid"`
+	ConversationSid      *string        `json:"conversation_sid"`
+	UnreadMessagesCount  *int           `json:"unread_messages_count"`
+	LastReadMessageIndex *int           `json:"last_read_message_index"`
+	ParticipantSid       *string        `json:"participant_sid"`
+	UserSid              *string        `json:"user_sid"`
+	FriendlyName         *string        `json:"friendly_name"`
+	ConversationState    string         `json:"conversation_state"`
+	Timers               map[string]any `json:"timers,omitempty"`
+	Attributes           *string        `json:"attributes"`
+	DateCreated          *string        `json:"date_created"`
+	DateUpdated          *string        `json:"date_updated"`
+	CreatedBy            *string        `json:"created_by"`
+	NotificationLevel    string         `json:"notification_level"`
+	UniqueName           *string        `json:"unique_name"`
+	URL                  *string        `json:"url"`
+	Links                map[string]any `json:"links,omitempty"`
 }
 
 // ConversationsV1UserConversationList is the paginated response for a user's conversations.
@@ -330,13 +330,13 @@ type ConversationsV1UserConversationList struct {
 // Twilio internally refers to this resource as the chat service, and the
 // path parameter is ChatServiceSid.
 type ConversationsV1ChatService struct {
-	Sid          *string           `json:"sid"`
-	AccountSid   *string           `json:"account_sid"`
-	FriendlyName *string           `json:"friendly_name"`
-	DateCreated  *string           `json:"date_created"`
-	DateUpdated  *string           `json:"date_updated"`
-	URL          *string           `json:"url"`
-	Links        map[string]string `json:"links,omitempty"`
+	Sid          *string        `json:"sid"`
+	AccountSid   *string        `json:"account_sid"`
+	FriendlyName *string        `json:"friendly_name"`
+	DateCreated  *string        `json:"date_created"`
+	DateUpdated  *string        `json:"date_updated"`
+	URL          *string        `json:"url"`
+	Links        map[string]any `json:"links,omitempty"`
 }
 
 // ConversationsV1ChatServiceList is the paginated /v1/Services response.
@@ -783,7 +783,7 @@ func (p CreateServiceRequest) form() url.Values {
 // Service — flat-method facade for the entire Conversations v1 surface.
 // ---------------------------------------------------------------------------
 
-// ConversationsV1Service exposes the conversations.twilio.com/v1 endpoints.
+// ConversationsV1Service exposes the Conversations /v1 endpoints.
 // Reach it as c.ConversationsV1. Methods are named verb+resource so the
 // surface stays flat for IDE discovery.
 type ConversationsV1Service struct{ t *transport }
@@ -794,7 +794,7 @@ type ConversationsV1Service struct{ t *transport }
 func (s *ConversationsV1Service) CreateConversation(ctx context.Context, params CreateConversationRequest) (*ConversationsV1Conversation, error) {
 	var out ConversationsV1Conversation
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Conversations", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Conversations"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -805,7 +805,7 @@ func (s *ConversationsV1Service) CreateConversation(ctx context.Context, params 
 func (s *ConversationsV1Service) ListConversations(ctx context.Context, params ListConversationsParams) (*ConversationsV1ConversationList, error) {
 	var out ConversationsV1ConversationList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Conversations"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -816,7 +816,7 @@ func (s *ConversationsV1Service) ListConversations(ctx context.Context, params L
 func (s *ConversationsV1Service) FetchConversation(ctx context.Context, conversationSid string) (*ConversationsV1Conversation, error) {
 	var out ConversationsV1Conversation
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid,
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -827,7 +827,7 @@ func (s *ConversationsV1Service) FetchConversation(ctx context.Context, conversa
 func (s *ConversationsV1Service) UpdateConversation(ctx context.Context, conversationSid string, params UpdateConversationRequest) (*ConversationsV1Conversation, error) {
 	var out ConversationsV1Conversation
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Conversations/" + conversationSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Conversations", conversationSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -837,7 +837,7 @@ func (s *ConversationsV1Service) UpdateConversation(ctx context.Context, convers
 // DeleteConversation removes a Conversation.
 func (s *ConversationsV1Service) DeleteConversation(ctx context.Context, conversationSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Conversations/" + conversationSid,
+		method: "DELETE", path: apiRoute("/v1", "Conversations", conversationSid),
 	}, nil)
 }
 
@@ -847,7 +847,7 @@ func (s *ConversationsV1Service) DeleteConversation(ctx context.Context, convers
 func (s *ConversationsV1Service) CreateMessage(ctx context.Context, conversationSid string, params CreateMessageRequest) (*ConversationsV1ConversationMessage, error) {
 	var out ConversationsV1ConversationMessage
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Messages", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Conversations", conversationSid, "Messages"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -858,7 +858,7 @@ func (s *ConversationsV1Service) CreateMessage(ctx context.Context, conversation
 func (s *ConversationsV1Service) ListMessages(ctx context.Context, conversationSid string, params V1PageParams) (*ConversationsV1ConversationMessageList, error) {
 	var out ConversationsV1ConversationMessageList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Messages", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid, "Messages"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -869,7 +869,7 @@ func (s *ConversationsV1Service) ListMessages(ctx context.Context, conversationS
 func (s *ConversationsV1Service) FetchMessage(ctx context.Context, conversationSid, messageSid string) (*ConversationsV1ConversationMessage, error) {
 	var out ConversationsV1ConversationMessage
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid,
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid, "Messages", messageSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -880,7 +880,7 @@ func (s *ConversationsV1Service) FetchMessage(ctx context.Context, conversationS
 func (s *ConversationsV1Service) UpdateMessage(ctx context.Context, conversationSid, messageSid string, params UpdateMessageRequest) (*ConversationsV1ConversationMessage, error) {
 	var out ConversationsV1ConversationMessage
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Conversations", conversationSid, "Messages", messageSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -890,7 +890,7 @@ func (s *ConversationsV1Service) UpdateMessage(ctx context.Context, conversation
 // DeleteMessage removes a Message.
 func (s *ConversationsV1Service) DeleteMessage(ctx context.Context, conversationSid, messageSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid,
+		method: "DELETE", path: apiRoute("/v1", "Conversations", conversationSid, "Messages", messageSid),
 	}, nil)
 }
 
@@ -900,7 +900,7 @@ func (s *ConversationsV1Service) DeleteMessage(ctx context.Context, conversation
 func (s *ConversationsV1Service) CreateParticipant(ctx context.Context, conversationSid string, params CreateParticipantRequest) (*ConversationsV1ConversationParticipant, error) {
 	var out ConversationsV1ConversationParticipant
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Participants", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Conversations", conversationSid, "Participants"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -911,7 +911,7 @@ func (s *ConversationsV1Service) CreateParticipant(ctx context.Context, conversa
 func (s *ConversationsV1Service) ListParticipants(ctx context.Context, conversationSid string, params V1PageParams) (*ConversationsV1ConversationParticipantList, error) {
 	var out ConversationsV1ConversationParticipantList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Participants", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid, "Participants"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -922,7 +922,7 @@ func (s *ConversationsV1Service) ListParticipants(ctx context.Context, conversat
 func (s *ConversationsV1Service) FetchParticipant(ctx context.Context, conversationSid, participantSid string) (*ConversationsV1ConversationParticipant, error) {
 	var out ConversationsV1ConversationParticipant
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Participants/" + participantSid,
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid, "Participants", participantSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -933,7 +933,7 @@ func (s *ConversationsV1Service) FetchParticipant(ctx context.Context, conversat
 func (s *ConversationsV1Service) UpdateParticipant(ctx context.Context, conversationSid, participantSid string, params UpdateParticipantRequest) (*ConversationsV1ConversationParticipant, error) {
 	var out ConversationsV1ConversationParticipant
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Participants/" + participantSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Conversations", conversationSid, "Participants", participantSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -943,7 +943,7 @@ func (s *ConversationsV1Service) UpdateParticipant(ctx context.Context, conversa
 // DeleteParticipant removes a Participant.
 func (s *ConversationsV1Service) DeleteParticipant(ctx context.Context, conversationSid, participantSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Conversations/" + conversationSid + "/Participants/" + participantSid,
+		method: "DELETE", path: apiRoute("/v1", "Conversations", conversationSid, "Participants", participantSid),
 	}, nil)
 }
 
@@ -953,7 +953,7 @@ func (s *ConversationsV1Service) DeleteParticipant(ctx context.Context, conversa
 func (s *ConversationsV1Service) ListMessageReceipts(ctx context.Context, conversationSid, messageSid string, params V1PageParams) (*ConversationsV1ConversationMessageReceiptList, error) {
 	var out ConversationsV1ConversationMessageReceiptList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid + "/Receipts", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid, "Messages", messageSid, "Receipts"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -964,7 +964,7 @@ func (s *ConversationsV1Service) ListMessageReceipts(ctx context.Context, conver
 func (s *ConversationsV1Service) FetchMessageReceipt(ctx context.Context, conversationSid, messageSid, sid string) (*ConversationsV1ConversationMessageReceipt, error) {
 	var out ConversationsV1ConversationMessageReceipt
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Messages/" + messageSid + "/Receipts/" + sid,
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid, "Messages", messageSid, "Receipts", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -977,7 +977,7 @@ func (s *ConversationsV1Service) FetchMessageReceipt(ctx context.Context, conver
 func (s *ConversationsV1Service) CreateScopedWebhook(ctx context.Context, conversationSid string, params CreateScopedWebhookRequest) (*ConversationsV1ConversationScopedWebhook, error) {
 	var out ConversationsV1ConversationScopedWebhook
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Webhooks", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Conversations", conversationSid, "Webhooks"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -988,7 +988,7 @@ func (s *ConversationsV1Service) CreateScopedWebhook(ctx context.Context, conver
 func (s *ConversationsV1Service) ListScopedWebhooks(ctx context.Context, conversationSid string, params V1PageParams) (*ConversationsV1ConversationScopedWebhookList, error) {
 	var out ConversationsV1ConversationScopedWebhookList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Webhooks", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid, "Webhooks"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -999,7 +999,7 @@ func (s *ConversationsV1Service) ListScopedWebhooks(ctx context.Context, convers
 func (s *ConversationsV1Service) FetchScopedWebhook(ctx context.Context, conversationSid, webhookSid string) (*ConversationsV1ConversationScopedWebhook, error) {
 	var out ConversationsV1ConversationScopedWebhook
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Conversations/" + conversationSid + "/Webhooks/" + webhookSid,
+		method: "GET", path: apiRoute("/v1", "Conversations", conversationSid, "Webhooks", webhookSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1010,7 +1010,7 @@ func (s *ConversationsV1Service) FetchScopedWebhook(ctx context.Context, convers
 func (s *ConversationsV1Service) UpdateScopedWebhook(ctx context.Context, conversationSid, webhookSid string, params UpdateScopedWebhookRequest) (*ConversationsV1ConversationScopedWebhook, error) {
 	var out ConversationsV1ConversationScopedWebhook
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Conversations/" + conversationSid + "/Webhooks/" + webhookSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Conversations", conversationSid, "Webhooks", webhookSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1020,7 +1020,7 @@ func (s *ConversationsV1Service) UpdateScopedWebhook(ctx context.Context, conver
 // DeleteScopedWebhook removes a scoped webhook.
 func (s *ConversationsV1Service) DeleteScopedWebhook(ctx context.Context, conversationSid, webhookSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Conversations/" + conversationSid + "/Webhooks/" + webhookSid,
+		method: "DELETE", path: apiRoute("/v1", "Conversations", conversationSid, "Webhooks", webhookSid),
 	}, nil)
 }
 
@@ -1030,7 +1030,7 @@ func (s *ConversationsV1Service) DeleteScopedWebhook(ctx context.Context, conver
 func (s *ConversationsV1Service) CreateRole(ctx context.Context, params CreateRoleRequest) (*ConversationsV1Role, error) {
 	var out ConversationsV1Role
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Roles", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Roles"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1041,7 +1041,7 @@ func (s *ConversationsV1Service) CreateRole(ctx context.Context, params CreateRo
 func (s *ConversationsV1Service) ListRoles(ctx context.Context, params V1PageParams) (*ConversationsV1RoleList, error) {
 	var out ConversationsV1RoleList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Roles", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Roles"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1052,7 +1052,7 @@ func (s *ConversationsV1Service) ListRoles(ctx context.Context, params V1PagePar
 func (s *ConversationsV1Service) FetchRole(ctx context.Context, sid string) (*ConversationsV1Role, error) {
 	var out ConversationsV1Role
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Roles/" + sid,
+		method: "GET", path: apiRoute("/v1", "Roles", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1063,7 +1063,7 @@ func (s *ConversationsV1Service) FetchRole(ctx context.Context, sid string) (*Co
 func (s *ConversationsV1Service) UpdateRole(ctx context.Context, sid string, params UpdateRoleRequest) (*ConversationsV1Role, error) {
 	var out ConversationsV1Role
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Roles/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Roles", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1073,7 +1073,7 @@ func (s *ConversationsV1Service) UpdateRole(ctx context.Context, sid string, par
 // DeleteRole removes a Role.
 func (s *ConversationsV1Service) DeleteRole(ctx context.Context, sid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Roles/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "Roles", sid),
 	}, nil)
 }
 
@@ -1083,7 +1083,7 @@ func (s *ConversationsV1Service) DeleteRole(ctx context.Context, sid string) err
 func (s *ConversationsV1Service) CreateUser(ctx context.Context, params CreateUserRequest) (*ConversationsV1User, error) {
 	var out ConversationsV1User
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Users", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Users"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1094,7 +1094,7 @@ func (s *ConversationsV1Service) CreateUser(ctx context.Context, params CreateUs
 func (s *ConversationsV1Service) ListUsers(ctx context.Context, params V1PageParams) (*ConversationsV1UserList, error) {
 	var out ConversationsV1UserList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Users", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Users"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1105,7 +1105,7 @@ func (s *ConversationsV1Service) ListUsers(ctx context.Context, params V1PagePar
 func (s *ConversationsV1Service) FetchUser(ctx context.Context, sid string) (*ConversationsV1User, error) {
 	var out ConversationsV1User
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Users/" + sid,
+		method: "GET", path: apiRoute("/v1", "Users", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1116,7 +1116,7 @@ func (s *ConversationsV1Service) FetchUser(ctx context.Context, sid string) (*Co
 func (s *ConversationsV1Service) UpdateUser(ctx context.Context, sid string, params UpdateUserRequest) (*ConversationsV1User, error) {
 	var out ConversationsV1User
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Users/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Users", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1126,7 +1126,7 @@ func (s *ConversationsV1Service) UpdateUser(ctx context.Context, sid string, par
 // DeleteUser removes a User.
 func (s *ConversationsV1Service) DeleteUser(ctx context.Context, sid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Users/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "Users", sid),
 	}, nil)
 }
 
@@ -1136,7 +1136,7 @@ func (s *ConversationsV1Service) DeleteUser(ctx context.Context, sid string) err
 func (s *ConversationsV1Service) ListUserConversations(ctx context.Context, userSid string, params V1PageParams) (*ConversationsV1UserConversationList, error) {
 	var out ConversationsV1UserConversationList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Users/" + userSid + "/Conversations", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Users", userSid, "Conversations"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1147,7 +1147,7 @@ func (s *ConversationsV1Service) ListUserConversations(ctx context.Context, user
 func (s *ConversationsV1Service) FetchUserConversation(ctx context.Context, userSid, conversationSid string) (*ConversationsV1UserConversation, error) {
 	var out ConversationsV1UserConversation
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Users/" + userSid + "/Conversations/" + conversationSid,
+		method: "GET", path: apiRoute("/v1", "Users", userSid, "Conversations", conversationSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1158,7 +1158,7 @@ func (s *ConversationsV1Service) FetchUserConversation(ctx context.Context, user
 func (s *ConversationsV1Service) UpdateUserConversation(ctx context.Context, userSid, conversationSid string, params UpdateUserConversationRequest) (*ConversationsV1UserConversation, error) {
 	var out ConversationsV1UserConversation
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Users/" + userSid + "/Conversations/" + conversationSid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Users", userSid, "Conversations", conversationSid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1168,7 +1168,7 @@ func (s *ConversationsV1Service) UpdateUserConversation(ctx context.Context, use
 // DeleteUserConversation removes a User from a Conversation.
 func (s *ConversationsV1Service) DeleteUserConversation(ctx context.Context, userSid, conversationSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Users/" + userSid + "/Conversations/" + conversationSid,
+		method: "DELETE", path: apiRoute("/v1", "Users", userSid, "Conversations", conversationSid),
 	}, nil)
 }
 
@@ -1178,7 +1178,7 @@ func (s *ConversationsV1Service) DeleteUserConversation(ctx context.Context, use
 func (s *ConversationsV1Service) CreateCredential(ctx context.Context, params CreateCredentialRequest) (*ConversationsV1Credential, error) {
 	var out ConversationsV1Credential
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Credentials", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Credentials"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1189,7 +1189,7 @@ func (s *ConversationsV1Service) CreateCredential(ctx context.Context, params Cr
 func (s *ConversationsV1Service) ListCredentials(ctx context.Context, params V1PageParams) (*ConversationsV1CredentialList, error) {
 	var out ConversationsV1CredentialList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Credentials", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Credentials"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1200,7 +1200,7 @@ func (s *ConversationsV1Service) ListCredentials(ctx context.Context, params V1P
 func (s *ConversationsV1Service) FetchCredential(ctx context.Context, sid string) (*ConversationsV1Credential, error) {
 	var out ConversationsV1Credential
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Credentials/" + sid,
+		method: "GET", path: apiRoute("/v1", "Credentials", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1211,7 +1211,7 @@ func (s *ConversationsV1Service) FetchCredential(ctx context.Context, sid string
 func (s *ConversationsV1Service) UpdateCredential(ctx context.Context, sid string, params UpdateCredentialRequest) (*ConversationsV1Credential, error) {
 	var out ConversationsV1Credential
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Credentials/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Credentials", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1221,7 +1221,7 @@ func (s *ConversationsV1Service) UpdateCredential(ctx context.Context, sid strin
 // DeleteCredential removes a push Credential.
 func (s *ConversationsV1Service) DeleteCredential(ctx context.Context, sid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Credentials/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "Credentials", sid),
 	}, nil)
 }
 
@@ -1231,7 +1231,7 @@ func (s *ConversationsV1Service) DeleteCredential(ctx context.Context, sid strin
 func (s *ConversationsV1Service) FetchConfiguration(ctx context.Context) (*ConversationsV1Configuration, error) {
 	var out ConversationsV1Configuration
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Configuration",
+		method: "GET", path: apiRoute("/v1", "Configuration"),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1242,7 +1242,7 @@ func (s *ConversationsV1Service) FetchConfiguration(ctx context.Context) (*Conve
 func (s *ConversationsV1Service) UpdateConfiguration(ctx context.Context, params UpdateConfigurationRequest) (*ConversationsV1Configuration, error) {
 	var out ConversationsV1Configuration
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Configuration", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Configuration"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1253,7 +1253,7 @@ func (s *ConversationsV1Service) UpdateConfiguration(ctx context.Context, params
 func (s *ConversationsV1Service) FetchConfigurationWebhook(ctx context.Context) (*ConversationsV1ConfigurationWebhook, error) {
 	var out ConversationsV1ConfigurationWebhook
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Configuration/Webhooks",
+		method: "GET", path: apiRoute("/v1", "Configuration", "Webhooks"),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1264,7 +1264,7 @@ func (s *ConversationsV1Service) FetchConfigurationWebhook(ctx context.Context) 
 func (s *ConversationsV1Service) UpdateConfigurationWebhook(ctx context.Context, params UpdateConfigurationWebhookRequest) (*ConversationsV1ConfigurationWebhook, error) {
 	var out ConversationsV1ConfigurationWebhook
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Configuration/Webhooks", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Configuration", "Webhooks"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1277,7 +1277,7 @@ func (s *ConversationsV1Service) UpdateConfigurationWebhook(ctx context.Context,
 func (s *ConversationsV1Service) CreateConfigAddress(ctx context.Context, params CreateConfigAddressRequest) (*ConversationsV1ConfigAddress, error) {
 	var out ConversationsV1ConfigAddress
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Configuration/Addresses", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Configuration", "Addresses"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1288,7 +1288,7 @@ func (s *ConversationsV1Service) CreateConfigAddress(ctx context.Context, params
 func (s *ConversationsV1Service) ListConfigAddresses(ctx context.Context, params V1PageParams) (*ConversationsV1ConfigAddressList, error) {
 	var out ConversationsV1ConfigAddressList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Configuration/Addresses", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Configuration", "Addresses"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1299,7 +1299,7 @@ func (s *ConversationsV1Service) ListConfigAddresses(ctx context.Context, params
 func (s *ConversationsV1Service) FetchConfigAddress(ctx context.Context, sid string) (*ConversationsV1ConfigAddress, error) {
 	var out ConversationsV1ConfigAddress
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Configuration/Addresses/" + sid,
+		method: "GET", path: apiRoute("/v1", "Configuration", "Addresses", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1310,7 +1310,7 @@ func (s *ConversationsV1Service) FetchConfigAddress(ctx context.Context, sid str
 func (s *ConversationsV1Service) UpdateConfigAddress(ctx context.Context, sid string, params UpdateConfigAddressRequest) (*ConversationsV1ConfigAddress, error) {
 	var out ConversationsV1ConfigAddress
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Configuration/Addresses/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Configuration", "Addresses", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1320,7 +1320,7 @@ func (s *ConversationsV1Service) UpdateConfigAddress(ctx context.Context, sid st
 // DeleteConfigAddress removes a Configuration Address.
 func (s *ConversationsV1Service) DeleteConfigAddress(ctx context.Context, sid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Configuration/Addresses/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "Configuration", "Addresses", sid),
 	}, nil)
 }
 
@@ -1331,7 +1331,7 @@ func (s *ConversationsV1Service) DeleteConfigAddress(ctx context.Context, sid st
 func (s *ConversationsV1Service) ListParticipantConversations(ctx context.Context, params ListParticipantConversationsParams) (*ConversationsV1ParticipantConversationList, error) {
 	var out ConversationsV1ParticipantConversationList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/ParticipantConversations", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "ParticipantConversations"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1344,7 +1344,7 @@ func (s *ConversationsV1Service) ListParticipantConversations(ctx context.Contex
 func (s *ConversationsV1Service) CreateConversationWithParticipants(ctx context.Context, params CreateConversationWithParticipantsRequest) (*ConversationsV1ConversationWithParticipants, error) {
 	var out ConversationsV1ConversationWithParticipants
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/ConversationWithParticipants", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "ConversationWithParticipants"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1357,7 +1357,7 @@ func (s *ConversationsV1Service) CreateConversationWithParticipants(ctx context.
 func (s *ConversationsV1Service) CreateService(ctx context.Context, params CreateServiceRequest) (*ConversationsV1ChatService, error) {
 	var out ConversationsV1ChatService
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1368,7 +1368,7 @@ func (s *ConversationsV1Service) CreateService(ctx context.Context, params Creat
 func (s *ConversationsV1Service) ListServices(ctx context.Context, params V1PageParams) (*ConversationsV1ChatServiceList, error) {
 	var out ConversationsV1ChatServiceList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1379,7 +1379,7 @@ func (s *ConversationsV1Service) ListServices(ctx context.Context, params V1Page
 func (s *ConversationsV1Service) FetchService(ctx context.Context, chatServiceSid string) (*ConversationsV1ChatService, error) {
 	var out ConversationsV1ChatService
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + chatServiceSid,
+		method: "GET", path: apiRoute("/v1", "Services", chatServiceSid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -1389,6 +1389,6 @@ func (s *ConversationsV1Service) FetchService(ctx context.Context, chatServiceSi
 // DeleteService removes a Conversations Service.
 func (s *ConversationsV1Service) DeleteService(ctx context.Context, chatServiceSid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + chatServiceSid,
+		method: "DELETE", path: apiRoute("/v1", "Services", chatServiceSid),
 	}, nil)
 }

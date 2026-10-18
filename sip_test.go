@@ -5,7 +5,6 @@ package voiceml_test
 import (
 	"context"
 	"net/url"
-	"strings"
 	"testing"
 
 	voiceml "github.com/voicetel/voiceml-go-sdk"
@@ -95,7 +94,7 @@ func sipMappingPayload() map[string]any {
 
 func TestSIPDomains(t *testing.T) {
 	steps := []handlerStep{
-		jsonStep(200, map[string]any{"domains": []any{sipDomainPayload()}, "page": 0, "page_size": 50, "total": 1, "next_page_uri": nil, "uri": ""}),
+		jsonStep(200, map[string]any{"domains": []any{sipDomainPayload()}, "page": 0, "page_size": 50, "next_page_uri": nil, "uri": ""}),
 		jsonStep(200, sipDomainPayload()),
 		jsonStep(200, sipDomainPayload()),
 		jsonStep(200, sipDomainPayload()),
@@ -105,7 +104,7 @@ func TestSIPDomains(t *testing.T) {
 	defer done()
 	ctx := context.Background()
 
-	out, err := c.SIP.Domains.List(ctx, voiceml.ListPageParams{})
+	out, err := c.SIP.Domains.List(ctx, voiceml.ListSIPParams{})
 	if err != nil || len(out.Domains) != 1 || out.Domains[0].DomainName != "ingress.example.com" {
 		t.Fatalf("List: %v / %+v", err, out)
 	}
@@ -159,7 +158,7 @@ func TestSIPDomains(t *testing.T) {
 
 func TestSIPCredentialLists(t *testing.T) {
 	steps := []handlerStep{
-		jsonStep(200, map[string]any{"credential_lists": []any{sipCredentialListPayload()}, "page": 0, "page_size": 50, "total": 1, "next_page_uri": nil, "uri": ""}),
+		jsonStep(200, map[string]any{"credential_lists": []any{sipCredentialListPayload()}, "page": 0, "page_size": 50, "next_page_uri": nil, "uri": ""}),
 		jsonStep(200, sipCredentialListPayload()),
 		jsonStep(200, sipCredentialListPayload()),
 		jsonStep(200, sipCredentialListPayload()),
@@ -169,7 +168,7 @@ func TestSIPCredentialLists(t *testing.T) {
 	defer done()
 	ctx := context.Background()
 
-	if _, err := c.SIP.CredentialLists.List(ctx, voiceml.ListPageParams{}); err != nil {
+	if _, err := c.SIP.CredentialLists.List(ctx, voiceml.ListSIPParams{}); err != nil {
 		t.Fatalf("List: %v", err)
 	}
 	if _, err := c.SIP.CredentialLists.Create(ctx, voiceml.CreateSIPCredentialListParams{FriendlyName: "office-handsets"}); err != nil {
@@ -193,7 +192,7 @@ func TestSIPCredentialLists(t *testing.T) {
 
 func TestSIPCredentialsNested(t *testing.T) {
 	steps := []handlerStep{
-		jsonStep(200, map[string]any{"credentials": []any{sipCredentialPayload()}, "page": 0, "page_size": 50, "total": 1, "next_page_uri": nil, "uri": ""}),
+		jsonStep(200, map[string]any{"credentials": []any{sipCredentialPayload()}, "page": 0, "page_size": 50, "next_page_uri": nil, "uri": ""}),
 		jsonStep(200, sipCredentialPayload()),
 		jsonStep(200, sipCredentialPayload()),
 		jsonStep(200, sipCredentialPayload()),
@@ -236,7 +235,7 @@ func TestSIPCredentialsNested(t *testing.T) {
 
 func TestSIPIpAccessControlLists(t *testing.T) {
 	steps := []handlerStep{
-		jsonStep(200, map[string]any{"ip_access_control_lists": []any{sipIpaclPayload()}, "page": 0, "page_size": 50, "total": 1, "next_page_uri": nil, "uri": ""}),
+		jsonStep(200, map[string]any{"ip_access_control_lists": []any{sipIpaclPayload()}, "page": 0, "page_size": 50, "next_page_uri": nil, "uri": ""}),
 		jsonStep(200, sipIpaclPayload()),
 		jsonStep(200, sipIpaclPayload()),
 		jsonStep(200, sipIpaclPayload()),
@@ -246,7 +245,7 @@ func TestSIPIpAccessControlLists(t *testing.T) {
 	defer done()
 	ctx := context.Background()
 
-	if _, err := c.SIP.IpAccessControlLists.List(ctx, voiceml.ListPageParams{}); err != nil {
+	if _, err := c.SIP.IpAccessControlLists.List(ctx, voiceml.ListSIPParams{}); err != nil {
 		t.Fatalf("List: %v", err)
 	}
 	if _, err := c.SIP.IpAccessControlLists.Create(ctx, voiceml.CreateSIPIpAccessControlListParams{FriendlyName: "carrier-allowlist"}); err != nil {
@@ -269,7 +268,7 @@ func TestSIPIpAccessControlLists(t *testing.T) {
 
 func TestSIPIpAddressesNested(t *testing.T) {
 	steps := []handlerStep{
-		jsonStep(200, map[string]any{"ip_addresses": []any{sipIpAddressPayload()}, "page": 0, "page_size": 50, "total": 1, "next_page_uri": nil, "uri": ""}),
+		jsonStep(200, map[string]any{"ip_addresses": []any{sipIpAddressPayload()}, "page": 0, "page_size": 50, "next_page_uri": nil, "uri": ""}),
 		jsonStep(200, sipIpAddressPayload()),
 		jsonStep(200, sipIpAddressPayload()),
 		jsonStep(200, sipIpAddressPayload()),
@@ -279,7 +278,7 @@ func TestSIPIpAddressesNested(t *testing.T) {
 	defer done()
 	ctx := context.Background()
 
-	if _, err := c.SIP.IpAccessControlLists.ListIpAddresses(ctx, sipACLSid, voiceml.ListPageParams{}); err != nil {
+	if _, err := c.SIP.IpAccessControlLists.ListIpAddresses(ctx, sipACLSid, voiceml.ListSIPParams{}); err != nil {
 		t.Fatalf("List: %v", err)
 	}
 	cidr := 32
@@ -306,7 +305,7 @@ func TestSIPIpAddressesNested(t *testing.T) {
 func TestSIPDomainHistoricalMappings(t *testing.T) {
 	steps := []handlerStep{
 		jsonStep(200, sipMappingPayload()), // CreateCredentialListMapping
-		jsonStep(200, map[string]any{"credential_list_mappings": []any{sipMappingPayload()}, "page": 0, "page_size": 50, "total": 1, "next_page_uri": nil, "uri": ""}),
+		jsonStep(200, map[string]any{"credential_list_mappings": []any{sipMappingPayload()}, "page": 0, "page_size": 50, "next_page_uri": nil, "uri": ""}),
 		jsonStep(200, sipMappingPayload()), // FetchCredentialListMapping
 		jsonStep(204, nil),                 // DeleteCredentialListMapping
 		jsonStep(200, sipMappingPayload()), // CreateIpAccessControlListMapping
@@ -359,21 +358,18 @@ func TestSIPDomainAuthNamespaces(t *testing.T) {
 	if _, err := c.SIP.Domains.CreateAuthCallsCredentialListMapping(ctx, sipDomainSid, voiceml.CreateSIPCredentialListMappingParams{CredentialListSid: sipCLSid}); err != nil {
 		t.Fatalf("Auth/Calls CL: %v", err)
 	}
-	if !strings.Contains(rec.requests[0].Path, "/Auth/Calls/CredentialListMappings") {
-		t.Fatalf("Auth/Calls CL path: %q", rec.requests[0].Path)
-	}
+	domainBase := "/2010-04-01/Accounts/" + testAccountSid + "/SIP/Domains/" + sipDomainSid
+	assertWire(t, "Auth/Calls CL path", rec.requests[0].Path, domainBase+"/Auth/Calls/CredentialListMappings.json")
+	assertWire(t, "Auth/Calls CL body", string(rec.requests[0].Body), "CredentialListSid="+sipCLSid)
 
 	if _, err := c.SIP.Domains.CreateAuthCallsIpAccessControlListMapping(ctx, sipDomainSid, voiceml.CreateSIPIpAccessControlListMappingParams{IpAccessControlListSid: sipACLSid}); err != nil {
 		t.Fatalf("Auth/Calls ACL: %v", err)
 	}
-	if !strings.Contains(rec.requests[1].Path, "/Auth/Calls/IpAccessControlListMappings") {
-		t.Fatalf("Auth/Calls ACL path: %q", rec.requests[1].Path)
-	}
+	assertWire(t, "Auth/Calls ACL path", rec.requests[1].Path, domainBase+"/Auth/Calls/IpAccessControlListMappings.json")
+	assertWire(t, "Auth/Calls ACL body", string(rec.requests[1].Body), "IpAccessControlListSid="+sipACLSid)
 
 	if _, err := c.SIP.Domains.CreateAuthRegistrationsCredentialListMapping(ctx, sipDomainSid, voiceml.CreateSIPCredentialListMappingParams{CredentialListSid: sipCLSid}); err != nil {
 		t.Fatalf("Auth/Registrations CL: %v", err)
 	}
-	if !strings.Contains(rec.requests[2].Path, "/Auth/Registrations/CredentialListMappings") {
-		t.Fatalf("Auth/Registrations CL path: %q", rec.requests[2].Path)
-	}
+	assertWire(t, "Auth/Registrations CL path", rec.requests[2].Path, domainBase+"/Auth/Registrations/CredentialListMappings.json")
 }

@@ -9,23 +9,31 @@ import (
 // TwiML+callback bundles dispatched by `<Dial><Application>`.
 type ApplicationsService struct{ c *Client }
 
-// Application is a stored TwiML+callback bundle.
+// Application is a stored TwiML+callback bundle. MessageStatusCallback is
+// the per-message delivery-receipt URL for SMS sent via the application;
+// SmsStatusCallback is its legacy alias. The Sms* URL fields are the inbound
+// SMS webhook configuration.
 type Application struct {
-	Sid                  string `json:"sid"`
-	AccountSid           string `json:"account_sid"`
-	FriendlyName         string `json:"friendly_name"`
-	APIVersion           string `json:"api_version"`
-	VoiceURL             string `json:"voice_url"`
-	VoiceMethod          string `json:"voice_method,omitempty"`
-	VoiceFallbackURL     string `json:"voice_fallback_url,omitempty"`
-	VoiceFallbackMethod  string `json:"voice_fallback_method,omitempty"`
-	VoiceCallerIDLookup  bool   `json:"voice_caller_id_lookup"`
-	StatusCallback       string `json:"status_callback,omitempty"`
-	StatusCallbackMethod string `json:"status_callback_method,omitempty"`
-	StatusCallbackEvent  string `json:"status_callback_event,omitempty"`
-	DateCreated          string `json:"date_created"`
-	DateUpdated          string `json:"date_updated"`
-	URI                  string `json:"uri"`
+	Sid                   string `json:"sid"`
+	AccountSid            string `json:"account_sid"`
+	FriendlyName          string `json:"friendly_name"`
+	APIVersion            string `json:"api_version"`
+	VoiceURL              string `json:"voice_url"`
+	VoiceMethod           string `json:"voice_method,omitempty"`
+	VoiceFallbackURL      string `json:"voice_fallback_url,omitempty"`
+	VoiceFallbackMethod   string `json:"voice_fallback_method,omitempty"`
+	VoiceCallerIDLookup   bool   `json:"voice_caller_id_lookup"`
+	StatusCallback        string `json:"status_callback,omitempty"`
+	StatusCallbackMethod  string `json:"status_callback_method,omitempty"`
+	MessageStatusCallback string `json:"message_status_callback,omitempty"`
+	SmsStatusCallback     string `json:"sms_status_callback,omitempty"`
+	SMSURL                string `json:"sms_url,omitempty"`
+	SMSMethod             string `json:"sms_method,omitempty"`
+	SMSFallbackURL        string `json:"sms_fallback_url,omitempty"`
+	SMSFallbackMethod     string `json:"sms_fallback_method,omitempty"`
+	DateCreated           string `json:"date_created"`
+	DateUpdated           string `json:"date_updated"`
+	URI                   string `json:"uri"`
 }
 
 // ApplicationList is the paginated /Applications list response.
@@ -36,17 +44,20 @@ type ApplicationList struct {
 
 // ApplicationParams is shared between create and update — every field
 // optional, only set ones are sent. For create, the spec does not require
-// any particular field; the server applies defaults.
+// any particular field; the server applies defaults. StatusCallbackEvent
+// is request-only: the server does not echo it on the Application.
 type ApplicationParams struct {
-	FriendlyName         *string `form:"FriendlyName"`
-	VoiceURL             *string `form:"VoiceUrl"`
-	VoiceMethod          *string `form:"VoiceMethod"`
-	VoiceFallbackURL     *string `form:"VoiceFallbackUrl"`
-	VoiceFallbackMethod  *string `form:"VoiceFallbackMethod"`
-	VoiceCallerIDLookup  *bool   `form:"VoiceCallerIdLookup"`
-	StatusCallback       *string `form:"StatusCallback"`
-	StatusCallbackMethod *string `form:"StatusCallbackMethod"`
-	StatusCallbackEvent  *string `form:"StatusCallbackEvent"`
+	FriendlyName          *string `form:"FriendlyName"`
+	VoiceURL              *string `form:"VoiceUrl"`
+	VoiceMethod           *string `form:"VoiceMethod"`
+	VoiceFallbackURL      *string `form:"VoiceFallbackUrl"`
+	VoiceFallbackMethod   *string `form:"VoiceFallbackMethod"`
+	VoiceCallerIDLookup   *bool   `form:"VoiceCallerIdLookup"`
+	StatusCallback        *string `form:"StatusCallback"`
+	StatusCallbackMethod  *string `form:"StatusCallbackMethod"`
+	StatusCallbackEvent   *string `form:"StatusCallbackEvent"`
+	MessageStatusCallback *string `form:"MessageStatusCallback"`
+	SmsStatusCallback     *string `form:"SmsStatusCallback"`
 }
 
 func (p ApplicationParams) form() url.Values {
@@ -60,6 +71,8 @@ func (p ApplicationParams) form() url.Values {
 	setStringP(v, "StatusCallback", p.StatusCallback)
 	setStringP(v, "StatusCallbackMethod", p.StatusCallbackMethod)
 	setStringP(v, "StatusCallbackEvent", p.StatusCallbackEvent)
+	setStringP(v, "MessageStatusCallback", p.MessageStatusCallback)
+	setStringP(v, "SmsStatusCallback", p.SmsStatusCallback)
 	return v
 }
 
@@ -106,6 +119,13 @@ func (s *ApplicationsService) List(ctx context.Context, params ListApplicationsP
 		return nil, err
 	}
 	return &out, nil
+}
+
+// Iterate walks every application lazily, following each page's
+// next_page_uri. See Pager.
+func (s *ApplicationsService) Iterate(ctx context.Context, params ListApplicationsParams) *Pager[Application] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Applications"), query: params.query()},
+		func(l *ApplicationList) ([]Application, PageLinks) { return l.Applications, l.Page })
 }
 
 // Get fetches an application by SID. GET /Applications/{sid}.

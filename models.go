@@ -106,43 +106,14 @@ const (
 	TrackBoth     TrackSelector = "both_tracks"
 )
 
-// Page is the Twilio-compatible pagination envelope embedded in every list
-// response. The concrete resource list field (Calls, Conferences, ...) is
-// declared in its own list type alongside this embed.
-type Page struct {
-	Page            int    `json:"page"`
-	PageSize        int    `json:"page_size"`
-	NumPages        *int   `json:"num_pages,omitempty"`
-	Total           *int   `json:"total,omitempty"`
-	Start           *int   `json:"start,omitempty"`
-	End             *int   `json:"end,omitempty"`
-	FirstPageURI    string `json:"first_page_uri,omitempty"`
-	NextPageURI     string `json:"next_page_uri,omitempty"`
-	PreviousPageURI string `json:"previous_page_uri,omitempty"`
-	URI             string `json:"uri,omitempty"`
-}
-
-// ErrorBody is the Twilio-compatible JSON payload the server returns for non-2xx
-// responses. Decoded automatically into *APIError.Code / .Message — exposed
-// here for callers that want to re-parse APIError.Body themselves.
+// ErrorBody is the Twilio-compatible JSON payload the server returns for
+// non-2xx responses. Decoded automatically into *APIError — exposed here for
+// callers that want to re-parse APIError.Body themselves.
 type ErrorBody struct {
-	Code     any    `json:"code,omitempty"`
-	Message  string `json:"message,omitempty"`
+	Code     int    `json:"code"`
+	Message  string `json:"message"`
 	MoreInfo string `json:"more_info,omitempty"`
-	Status   int    `json:"status,omitempty"`
-}
-
-// HealthFailure is one tripped check from the /health deep probe.
-type HealthFailure struct {
-	Check  string `json:"check"`
-	Detail string `json:"detail"`
-}
-
-// HealthStatus is the parsed /health body.
-type HealthStatus struct {
-	OK       bool            `json:"ok"`
-	Warnings []HealthFailure `json:"warnings,omitempty"`
-	Failures []HealthFailure `json:"failures,omitempty"`
+	Status   int    `json:"status"`
 }
 
 // boolPtr / intPtr / stringPtr are convenience constructors for optional

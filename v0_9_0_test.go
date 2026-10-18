@@ -37,7 +37,7 @@ const (
 	v1PolicySid = "NY" + "0123456789abcdef0123456789abcdef"
 	v1TargetSid = "NE" + "0123456789abcdef0123456789abcdef"
 	v1SipDomSid = "SD" + "0123456789abcdef0123456789abcdef"
-	rv2PnNumber = "+18005551234"
+	rv2PnNumber = "+14155550100"
 	rv2PnSid    = "QQ" + "0000000000000000000000000000000a"
 )
 
@@ -658,12 +658,12 @@ func TestConversationsV1Paths(t *testing.T) {
 			invoke: func(c *voiceml.Client) error {
 				_, err := c.ConversationsV1.CreateParticipant(context.Background(), convSid, voiceml.CreateParticipantRequest{
 					Identity:                voiceml.String("alice"),
-					MessagingBindingAddress: voiceml.String("+15551234567"),
+					MessagingBindingAddress: voiceml.String("+14155550103"),
 				})
 				return err
 			},
 			assertBody: func(t *testing.T, body, _ url.Values) {
-				if body.Get("Identity") != "alice" || body.Get("MessagingBinding.Address") != "+15551234567" {
+				if body.Get("Identity") != "alice" || body.Get("MessagingBinding.Address") != "+14155550103" {
 					t.Fatalf("body: %+v", body)
 				}
 			},
@@ -997,7 +997,7 @@ func TestConversationsV1Paths(t *testing.T) {
 			method: "POST", path: "/v1/Configuration/Addresses",
 			invoke: func(c *voiceml.Client) error {
 				_, err := c.ConversationsV1.CreateConfigAddress(context.Background(), voiceml.CreateConfigAddressRequest{
-					Type: "sms", Address: "+15551234567",
+					Type: "sms", Address: "+14155550103",
 					AutoCreationEnabled:    voiceml.Bool(true),
 					AutoCreationType:       voiceml.String("webhook"),
 					AutoCreationWebhookURL: voiceml.String("https://example.com/auto"),
@@ -1005,7 +1005,7 @@ func TestConversationsV1Paths(t *testing.T) {
 				return err
 			},
 			assertBody: func(t *testing.T, body, _ url.Values) {
-				if body.Get("Type") != "sms" || body.Get("Address") != "+15551234567" ||
+				if body.Get("Type") != "sms" || body.Get("Address") != "+14155550103" ||
 					body.Get("AutoCreation.Enabled") != "true" ||
 					body.Get("AutoCreation.Type") != "webhook" ||
 					body.Get("AutoCreation.WebhookUrl") != "https://example.com/auto" {
@@ -1059,13 +1059,13 @@ func TestConversationsV1Paths(t *testing.T) {
 			method: "GET", path: "/v1/ParticipantConversations",
 			invoke: func(c *voiceml.Client) error {
 				_, err := c.ConversationsV1.ListParticipantConversations(context.Background(), voiceml.ListParticipantConversationsParams{
-					Address:  voiceml.String("+15551234567"),
+					Address:  voiceml.String("+14155550103"),
 					PageSize: voiceml.Int(50),
 				})
 				return err
 			},
 			assertBody: func(t *testing.T, _, q url.Values) {
-				if q.Get("Address") != "+15551234567" || q.Get("PageSize") != "50" {
+				if q.Get("Address") != "+14155550103" || q.Get("PageSize") != "50" {
 					t.Fatalf("query: %+v", q)
 				}
 			},
@@ -1079,7 +1079,7 @@ func TestConversationsV1Paths(t *testing.T) {
 					FriendlyName: voiceml.String("group chat"),
 					Participant: []string{
 						`{"identity":"alice"}`,
-						`{"messaging_binding":{"address":"+15551234567"}}`,
+						`{"messaging_binding":{"address":"+14155550103"}}`,
 					},
 				})
 				return err
@@ -1216,7 +1216,7 @@ func TestConversationsV1ChatServiceDecode(t *testing.T) {
 	if out.FriendlyName == nil || *out.FriendlyName != "main" {
 		t.Fatalf("friendly_name: %+v", out.FriendlyName)
 	}
-	if got := out.Links["conversations"]; !strings.HasSuffix(got, "/Conversations") {
+	if got, _ := out.Links["conversations"].(string); !strings.HasSuffix(got, "/Conversations") {
 		t.Fatalf("links: %+v", out.Links)
 	}
 

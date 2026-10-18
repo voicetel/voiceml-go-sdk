@@ -377,6 +377,21 @@ type SIPService struct {
 	Domains              *SIPDomainsService
 	CredentialLists      *SIPCredentialListsService
 	IpAccessControlLists *SIPIpAccessControlListsService
+	Registrations        *SIPRegistrationsService
+}
+
+// ListSIPParams are the query params for the SIP Domain, CredentialList,
+// IpAccessControlList and IpAddress lists: an exact FriendlyName filter
+// plus pagination.
+type ListSIPParams struct {
+	FriendlyName string
+	ListPageParams
+}
+
+func (p ListSIPParams) query() url.Values {
+	v := p.ListPageParams.query()
+	setString(v, "FriendlyName", p.FriendlyName)
+	return v
 }
 
 // SIPDomainsService surfaces /SIP/Domains plus the four mapping endpoints
@@ -396,7 +411,7 @@ type SIPIpAccessControlListsService struct{ c *Client }
 // ---------------------------------------------------------------------------
 
 // List returns a single page of SipDomains.
-func (s *SIPDomainsService) List(ctx context.Context, params ListPageParams) (*SIPDomainList, error) {
+func (s *SIPDomainsService) List(ctx context.Context, params ListSIPParams) (*SIPDomainList, error) {
 	var out SIPDomainList
 	if err := s.c.t.do(ctx, requestOpts{
 		method: "GET", path: s.c.pathf("SIP", "Domains"), query: params.query(),
@@ -404,6 +419,12 @@ func (s *SIPDomainsService) List(ctx context.Context, params ListPageParams) (*S
 		return nil, err
 	}
 	return &out, nil
+}
+
+// Iterate walks every SipDomain lazily. See Pager.
+func (s *SIPDomainsService) Iterate(ctx context.Context, params ListSIPParams) *Pager[SIPDomain] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("SIP", "Domains"), query: params.query()},
+		func(l *SIPDomainList) ([]SIPDomain, PageLinks) { return l.Domains, l.Page })
 }
 
 // Create adds a SipDomain.
@@ -650,7 +671,8 @@ func (s *SIPDomainsService) DeleteAuthRegistrationsCredentialListMapping(ctx con
 // SIPCredentialListsService methods
 // ---------------------------------------------------------------------------
 
-func (s *SIPCredentialListsService) List(ctx context.Context, params ListPageParams) (*SIPCredentialListList, error) {
+// List returns a single page of CredentialLists.
+func (s *SIPCredentialListsService) List(ctx context.Context, params ListSIPParams) (*SIPCredentialListList, error) {
 	var out SIPCredentialListList
 	if err := s.c.t.do(ctx, requestOpts{
 		method: "GET", path: s.c.pathf("SIP", "CredentialLists"), query: params.query(),
@@ -660,6 +682,13 @@ func (s *SIPCredentialListsService) List(ctx context.Context, params ListPagePar
 	return &out, nil
 }
 
+// Iterate walks every CredentialList lazily. See Pager.
+func (s *SIPCredentialListsService) Iterate(ctx context.Context, params ListSIPParams) *Pager[SIPCredentialList] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("SIP", "CredentialLists"), query: params.query()},
+		func(l *SIPCredentialListList) ([]SIPCredentialList, PageLinks) { return l.CredentialLists, l.Page })
+}
+
+// Create adds a CredentialList.
 func (s *SIPCredentialListsService) Create(ctx context.Context, params CreateSIPCredentialListParams) (*SIPCredentialList, error) {
 	var out SIPCredentialList
 	if err := s.c.t.do(ctx, requestOpts{
@@ -709,6 +738,13 @@ func (s *SIPCredentialListsService) ListCredentials(ctx context.Context, credent
 	return &out, nil
 }
 
+// IterateCredentials walks every credential in a CredentialList lazily.
+func (s *SIPCredentialListsService) IterateCredentials(ctx context.Context, credentialListSid string, params ListPageParams) *Pager[SIPCredential] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("SIP", "CredentialLists", credentialListSid, "Credentials"), query: params.query()},
+		func(l *SIPCredentialPage) ([]SIPCredential, PageLinks) { return l.Credentials, l.Page })
+}
+
+// CreateCredential adds a credential to a CredentialList.
 func (s *SIPCredentialListsService) CreateCredential(ctx context.Context, credentialListSid string, params CreateSIPCredentialParams) (*SIPCredential, error) {
 	var out SIPCredential
 	if err := s.c.t.do(ctx, requestOpts{
@@ -751,7 +787,8 @@ func (s *SIPCredentialListsService) DeleteCredential(ctx context.Context, creden
 // SIPIpAccessControlListsService methods
 // ---------------------------------------------------------------------------
 
-func (s *SIPIpAccessControlListsService) List(ctx context.Context, params ListPageParams) (*SIPIpAccessControlListList, error) {
+// List returns a single page of IpAccessControlLists.
+func (s *SIPIpAccessControlListsService) List(ctx context.Context, params ListSIPParams) (*SIPIpAccessControlListList, error) {
 	var out SIPIpAccessControlListList
 	if err := s.c.t.do(ctx, requestOpts{
 		method: "GET", path: s.c.pathf("SIP", "IpAccessControlLists"), query: params.query(),
@@ -761,6 +798,15 @@ func (s *SIPIpAccessControlListsService) List(ctx context.Context, params ListPa
 	return &out, nil
 }
 
+// Iterate walks every IpAccessControlList lazily. See Pager.
+func (s *SIPIpAccessControlListsService) Iterate(ctx context.Context, params ListSIPParams) *Pager[SIPIpAccessControlList] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("SIP", "IpAccessControlLists"), query: params.query()},
+		func(l *SIPIpAccessControlListList) ([]SIPIpAccessControlList, PageLinks) {
+			return l.IpAccessControlLists, l.Page
+		})
+}
+
+// Create adds an IpAccessControlList.
 func (s *SIPIpAccessControlListsService) Create(ctx context.Context, params CreateSIPIpAccessControlListParams) (*SIPIpAccessControlList, error) {
 	var out SIPIpAccessControlList
 	if err := s.c.t.do(ctx, requestOpts{
@@ -799,7 +845,8 @@ func (s *SIPIpAccessControlListsService) Delete(ctx context.Context, aclSid stri
 
 // --- Per-IpAccessControlList /IpAddresses sub-resource ---------------------
 
-func (s *SIPIpAccessControlListsService) ListIpAddresses(ctx context.Context, aclSid string, params ListPageParams) (*SIPIpAddressList, error) {
+// ListIpAddresses returns a single page of an IpAccessControlList's entries.
+func (s *SIPIpAccessControlListsService) ListIpAddresses(ctx context.Context, aclSid string, params ListSIPParams) (*SIPIpAddressList, error) {
 	var out SIPIpAddressList
 	if err := s.c.t.do(ctx, requestOpts{
 		method: "GET", path: s.c.pathf("SIP", "IpAccessControlLists", aclSid, "IpAddresses"),
@@ -810,6 +857,13 @@ func (s *SIPIpAccessControlListsService) ListIpAddresses(ctx context.Context, ac
 	return &out, nil
 }
 
+// IterateIpAddresses walks every entry of an IpAccessControlList lazily.
+func (s *SIPIpAccessControlListsService) IterateIpAddresses(ctx context.Context, aclSid string, params ListSIPParams) *Pager[SIPIpAddress] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("SIP", "IpAccessControlLists", aclSid, "IpAddresses"), query: params.query()},
+		func(l *SIPIpAddressList) ([]SIPIpAddress, PageLinks) { return l.IpAddresses, l.Page })
+}
+
+// CreateIpAddress adds an entry to an IpAccessControlList.
 func (s *SIPIpAccessControlListsService) CreateIpAddress(ctx context.Context, aclSid string, params CreateSIPIpAddressParams) (*SIPIpAddress, error) {
 	var out SIPIpAddress
 	if err := s.c.t.do(ctx, requestOpts{
@@ -846,4 +900,67 @@ func (s *SIPIpAccessControlListsService) DeleteIpAddress(ctx context.Context, ac
 	return s.c.t.do(ctx, requestOpts{
 		method: "DELETE", path: s.c.pathf("SIP", "IpAccessControlLists", aclSid, "IpAddresses", ipAddressSid),
 	}, nil)
+}
+
+// ---------------------------------------------------------------------------
+// SIP Registrations (account-level, read-only)
+// ---------------------------------------------------------------------------
+
+// SIPRegistrationsService lists the account's current SIP registrations
+// (GET /SIP/Registrations.json).
+type SIPRegistrationsService struct{ c *Client }
+
+// SIPRegistrationContact is one registered contact binding of an AOR.
+type SIPRegistrationContact struct {
+	Contact    string `json:"contact"`
+	Received   string `json:"received,omitempty"`
+	Socket     string `json:"socket,omitempty"`
+	UserAgent  string `json:"user_agent,omitempty"`
+	ExpiresAt  string `json:"expires_at,omitempty"`
+	Registered bool   `json:"registered"`
+}
+
+// SIPRegistrationActiveCall is the call an AOR is currently on.
+type SIPRegistrationActiveCall struct {
+	CallSid   string `json:"call_sid"`
+	Direction string `json:"direction,omitempty"`
+	Remote    string `json:"remote,omitempty"`
+	Since     string `json:"since,omitempty"`
+}
+
+// SIPRegistration is one address-of-record registered against a SIP
+// Domain. Status is "registered" or "expired"; ActiveCall is nil when the
+// AOR is idle.
+type SIPRegistration struct {
+	AOR            string                     `json:"aor"`
+	Username       string                     `json:"username"`
+	Domain         string                     `json:"domain"`
+	DomainSid      string                     `json:"domain_sid"`
+	Status         string                     `json:"status"`
+	CallerID       string                     `json:"caller_id,omitempty"`
+	UserAgent      string                     `json:"user_agent,omitempty"`
+	LastRegistered string                     `json:"last_registered,omitempty"`
+	Contacts       []SIPRegistrationContact   `json:"contacts"`
+	ActiveCall     *SIPRegistrationActiveCall `json:"active_call,omitempty"`
+}
+
+// SIPRegistrationList is the paginated /SIP/Registrations response.
+type SIPRegistrationList struct {
+	Page
+	Registrations []SIPRegistration `json:"registrations"`
+}
+
+// List returns a page of the account's SIP registrations.
+func (s *SIPRegistrationsService) List(ctx context.Context, params ListPageParams) (*SIPRegistrationList, error) {
+	var out SIPRegistrationList
+	if err := s.c.t.do(ctx, requestOpts{method: "GET", path: s.c.pathf("SIP", "Registrations"), query: params.query()}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Iterate walks every SIP registration lazily. See Pager.
+func (s *SIPRegistrationsService) Iterate(ctx context.Context, params ListPageParams) *Pager[SIPRegistration] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("SIP", "Registrations"), query: params.query()},
+		func(l *SIPRegistrationList) ([]SIPRegistration, PageLinks) { return l.Registrations, l.Page })
 }

@@ -1,16 +1,18 @@
-// Twilio response-shape conformance tests for the Go SDK (#256).
+// Response-fixture conformance tests against the private fixture corpus.
 //
-// These tests are SKIPPED unless VOICEML_CONFORMANCE_FIXTURES points at a
-// fixture corpus emitted by callBroadcast's cmd/twilio-conformance-fixtures.
-// They load each canonical Twilio response example from the corpus and
-// json.Unmarshal it into the matching SDK resource type. If decoding
-// fails, our type model has drifted from Twilio's documented shape — fix
-// the SDK, not the fixture.
+// These tests are SKIPPED, with a visible reason, unless
+// VOICEML_CONFORMANCE_FIXTURES points at the server team's conformance
+// fixture corpus (it is not public). They load each canonical response
+// example from the corpus and json.Unmarshal it into the matching SDK
+// resource type. If decoding fails, the type model has drifted from the
+// documented wire format — fix the SDK, not the fixture.
 //
-// Phase B of #256. Phase A vendored 115 fixtures across 7 resources.
+// The public, always-on equivalent is the spec contract test in
+// contract_test.go / contract_models_test.go.
+//
 // Run:
 //
-//	VOICEML_CONFORMANCE_FIXTURES=/path/to/callBroadcast/cmd/twilio-conformance-fixtures/fixtures \
+//	VOICEML_CONFORMANCE_FIXTURES=/path/to/conformance-fixtures \
 //	  go test ./... -run TestTwilioFixtureConformance
 
 package voiceml_test
@@ -37,7 +39,7 @@ type conformanceEntry struct {
 func TestTwilioFixtureConformance(t *testing.T) {
 	root := os.Getenv("VOICEML_CONFORMANCE_FIXTURES")
 	if root == "" {
-		t.Skip("VOICEML_CONFORMANCE_FIXTURES not set; skipping conformance fixtures")
+		t.Skip("VOICEML_CONFORMANCE_FIXTURES not set: the private response-fixture corpus is not available; the spec contract tests cover response models")
 	}
 
 	indexBody, err := os.ReadFile(filepath.Join(root, "index.json"))
@@ -142,17 +144,12 @@ func pickConformanceTarget(opID string) any {
 		return &voiceml.CallTranscription{}
 
 	case "ListCallNotification", "ListNotification":
-		// VoiceML treats Notifications as compat stubs (always-empty);
-		// Twilio's example is a fully-populated notification object.
-		// Decoding into a permissive container catches grossly malformed
-		// JSON without asserting field-level parity for a feature we
-		// don't ship.
-		return &map[string]any{}
+		return &voiceml.NotificationList{}
 	case "FetchCallNotification", "FetchNotification":
-		return &map[string]any{}
+		return &voiceml.Notification{}
 
 	case "ListCallEvent":
-		return &voiceml.EventsList{}
+		return &voiceml.CallEventList{}
 
 	case "CreateUserDefinedMessage":
 		// No SDK model; surface as raw JSON.

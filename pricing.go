@@ -1,10 +1,10 @@
-// Pricing v1/v2 (pricing.twilio.com) resources. Read-only GETs.
+// Pricing v1/v2 resources. Read-only GETs.
 //
 // VoiceML has no dedicated pricing subdomain, so these live on the default host
 // (voiceml.voicetel.com) under /v1 and /v2. VoiceML is NANP-only: every
 // Countries list carries exactly one entry (the tenant's own country), and a
-// Numbers fetch 404s for a non-NANP destination. Number path segments are
-// URL-encoded (E.164 "+" becomes "%2B").
+// Numbers fetch 404s for a non-NANP destination. Path segments are
+// percent-encoded (E.164 "+" becomes "%2B", a space "%20").
 //
 // Layout:
 //
@@ -214,12 +214,12 @@ func (p PricingNumberParams) query() url.Values {
 // Services.
 // ---------------------------------------------------------------------------
 
-// PricingService bundles the read-only pricing.twilio.com v1/v2 surface. Reach
+// PricingService bundles the read-only Pricing v1/v2 surface. Reach
 // it as c.Pricing.
 type PricingService struct {
-	// V1 — the pricing.twilio.com/v1 surface.
+	// V1 — the Pricing /v1 surface.
 	V1 *PricingV1Service
-	// V2 — the pricing.twilio.com/v2 surface.
+	// V2 — the Pricing /v2 surface.
 	V2 *PricingV2Service
 }
 
@@ -293,7 +293,7 @@ func newPricingService(t *transport) *PricingService {
 }
 
 // listCountries is the shared GET .../Countries helper.
-func listCountries(ctx context.Context, t *transport, path string, params V1PageParams) (*PricingCountriesList, error) {
+func listCountries(ctx context.Context, t *transport, path route, params V1PageParams) (*PricingCountriesList, error) {
 	var out PricingCountriesList
 	if err := t.do(ctx, requestOpts{
 		method: "GET", path: path, query: params.query(),
@@ -310,14 +310,14 @@ type PricingV1VoiceCountriesService struct{ t *transport }
 
 // List returns the Countries envelope for v1 voice pricing.
 func (s *PricingV1VoiceCountriesService) List(ctx context.Context, params V1PageParams) (*PricingCountriesList, error) {
-	return listCountries(ctx, s.t, "/v1/Voice/Countries", params)
+	return listCountries(ctx, s.t, apiRoute("/v1", "Voice", "Countries"), params)
 }
 
 // Fetch returns the v1 voice price body for a country.
 func (s *PricingV1VoiceCountriesService) Fetch(ctx context.Context, isoCountry string) (*PricingVoiceCountry, error) {
 	var out PricingVoiceCountry
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Voice/Countries/" + isoCountry,
+		method: "GET", path: apiRoute("/v1", "Voice", "Countries", isoCountry),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -331,7 +331,7 @@ type PricingV1VoiceNumbersService struct{ t *transport }
 func (s *PricingV1VoiceNumbersService) Fetch(ctx context.Context, number string) (*PricingVoiceNumber, error) {
 	var out PricingVoiceNumber
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Voice/Numbers/" + url.QueryEscape(number),
+		method: "GET", path: apiRoute("/v1", "Voice", "Numbers", number),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -345,14 +345,14 @@ type PricingV1MessagingCountriesService struct{ t *transport }
 
 // List returns the Countries envelope for v1 messaging pricing.
 func (s *PricingV1MessagingCountriesService) List(ctx context.Context, params V1PageParams) (*PricingCountriesList, error) {
-	return listCountries(ctx, s.t, "/v1/Messaging/Countries", params)
+	return listCountries(ctx, s.t, apiRoute("/v1", "Messaging", "Countries"), params)
 }
 
 // Fetch returns the v1 messaging price body for a country.
 func (s *PricingV1MessagingCountriesService) Fetch(ctx context.Context, isoCountry string) (*PricingMessagingCountry, error) {
 	var out PricingMessagingCountry
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Messaging/Countries/" + isoCountry,
+		method: "GET", path: apiRoute("/v1", "Messaging", "Countries", isoCountry),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -366,14 +366,14 @@ type PricingV1PhoneNumbersCountriesService struct{ t *transport }
 
 // List returns the Countries envelope for v1 phone number pricing.
 func (s *PricingV1PhoneNumbersCountriesService) List(ctx context.Context, params V1PageParams) (*PricingCountriesList, error) {
-	return listCountries(ctx, s.t, "/v1/PhoneNumbers/Countries", params)
+	return listCountries(ctx, s.t, apiRoute("/v1", "PhoneNumbers", "Countries"), params)
 }
 
 // Fetch returns the v1 phone number price body for a country.
 func (s *PricingV1PhoneNumbersCountriesService) Fetch(ctx context.Context, isoCountry string) (*PricingPhoneNumberCountry, error) {
 	var out PricingPhoneNumberCountry
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/PhoneNumbers/Countries/" + isoCountry,
+		method: "GET", path: apiRoute("/v1", "PhoneNumbers", "Countries", isoCountry),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -387,14 +387,14 @@ type PricingV2VoiceCountriesService struct{ t *transport }
 
 // List returns the Countries envelope for v2 voice pricing.
 func (s *PricingV2VoiceCountriesService) List(ctx context.Context, params V1PageParams) (*PricingCountriesList, error) {
-	return listCountries(ctx, s.t, "/v2/Voice/Countries", params)
+	return listCountries(ctx, s.t, apiRoute("/v2", "Voice", "Countries"), params)
 }
 
 // Fetch returns the v2 voice price body for a country.
 func (s *PricingV2VoiceCountriesService) Fetch(ctx context.Context, isoCountry string) (*PricingVoiceCountryV2, error) {
 	var out PricingVoiceCountryV2
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v2/Voice/Countries/" + isoCountry,
+		method: "GET", path: apiRoute("/v2", "Voice", "Countries", isoCountry),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -409,7 +409,7 @@ type PricingV2VoiceNumbersService struct{ t *transport }
 func (s *PricingV2VoiceNumbersService) Fetch(ctx context.Context, destinationNumber string, params PricingNumberParams) (*PricingVoiceNumberV2, error) {
 	var out PricingVoiceNumberV2
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v2/Voice/Numbers/" + url.QueryEscape(destinationNumber), query: params.query(),
+		method: "GET", path: apiRoute("/v2", "Voice", "Numbers", destinationNumber), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -423,14 +423,14 @@ type PricingV2TrunkingCountriesService struct{ t *transport }
 
 // List returns the Countries envelope for v2 trunking pricing.
 func (s *PricingV2TrunkingCountriesService) List(ctx context.Context, params V1PageParams) (*PricingCountriesList, error) {
-	return listCountries(ctx, s.t, "/v2/Trunking/Countries", params)
+	return listCountries(ctx, s.t, apiRoute("/v2", "Trunking", "Countries"), params)
 }
 
 // Fetch returns the v2 trunking price body for a country.
 func (s *PricingV2TrunkingCountriesService) Fetch(ctx context.Context, isoCountry string) (*PricingTrunkingCountry, error) {
 	var out PricingTrunkingCountry
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v2/Trunking/Countries/" + isoCountry,
+		method: "GET", path: apiRoute("/v2", "Trunking", "Countries", isoCountry),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -445,7 +445,7 @@ type PricingV2TrunkingNumbersService struct{ t *transport }
 func (s *PricingV2TrunkingNumbersService) Fetch(ctx context.Context, destinationNumber string, params PricingNumberParams) (*PricingTrunkingNumber, error) {
 	var out PricingTrunkingNumber
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v2/Trunking/Numbers/" + url.QueryEscape(destinationNumber), query: params.query(),
+		method: "GET", path: apiRoute("/v2", "Trunking", "Numbers", destinationNumber), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}

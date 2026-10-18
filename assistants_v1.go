@@ -457,7 +457,7 @@ type AssistantsV1Service struct{ c *Client }
 func (s *AssistantsV1Service) CreateAssistant(ctx context.Context, params *CreateAssistantRequest) (*AssistantsV1Assistant, error) {
 	var out AssistantsV1Assistant
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Assistants", json: params,
+		method: "POST", path: apiRoute("/v1", "Assistants"), json: params,
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -468,7 +468,7 @@ func (s *AssistantsV1Service) CreateAssistant(ctx context.Context, params *Creat
 func (s *AssistantsV1Service) ListAssistants(ctx context.Context, params ListAssistantsParams) (*AssistantsV1AssistantList, error) {
 	var out AssistantsV1AssistantList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Assistants", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Assistants"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -480,7 +480,7 @@ func (s *AssistantsV1Service) ListAssistants(ctx context.Context, params ListAss
 func (s *AssistantsV1Service) FetchAssistant(ctx context.Context, assistantID string) (*AssistantsV1AssistantWithToolsAndKnowledge, error) {
 	var out AssistantsV1AssistantWithToolsAndKnowledge
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Assistants/" + assistantID,
+		method: "GET", path: apiRoute("/v1", "Assistants", assistantID),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -492,7 +492,7 @@ func (s *AssistantsV1Service) FetchAssistant(ctx context.Context, assistantID st
 func (s *AssistantsV1Service) UpdateAssistant(ctx context.Context, assistantID string, params *UpdateAssistantRequest) (*AssistantsV1Assistant, error) {
 	var out AssistantsV1Assistant
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "PUT", path: "/v1/Assistants/" + assistantID, json: params,
+		method: "PUT", path: apiRoute("/v1", "Assistants", assistantID), json: params,
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -502,7 +502,7 @@ func (s *AssistantsV1Service) UpdateAssistant(ctx context.Context, assistantID s
 // DeleteAssistant removes an Assistant.
 func (s *AssistantsV1Service) DeleteAssistant(ctx context.Context, assistantID string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Assistants/" + assistantID,
+		method: "DELETE", path: apiRoute("/v1", "Assistants", assistantID),
 	}, nil)
 }
 
@@ -513,7 +513,7 @@ func (s *AssistantsV1Service) DeleteAssistant(ctx context.Context, assistantID s
 func (s *AssistantsV1Service) CreateTool(ctx context.Context, params *CreateToolRequest) (*AssistantsV1Tool, error) {
 	var out AssistantsV1Tool
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Tools", json: params,
+		method: "POST", path: apiRoute("/v1", "Tools"), json: params,
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -524,7 +524,7 @@ func (s *AssistantsV1Service) CreateTool(ctx context.Context, params *CreateTool
 func (s *AssistantsV1Service) ListTools(ctx context.Context, params ListToolsParams) (*AssistantsV1ToolList, error) {
 	var out AssistantsV1ToolList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Tools", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Tools"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -535,7 +535,7 @@ func (s *AssistantsV1Service) ListTools(ctx context.Context, params ListToolsPar
 func (s *AssistantsV1Service) FetchTool(ctx context.Context, toolID string) (*AssistantsV1ToolWithPolicies, error) {
 	var out AssistantsV1ToolWithPolicies
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Tools/" + toolID,
+		method: "GET", path: apiRoute("/v1", "Tools", toolID),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -546,7 +546,7 @@ func (s *AssistantsV1Service) FetchTool(ctx context.Context, toolID string) (*As
 func (s *AssistantsV1Service) UpdateTool(ctx context.Context, toolID string, params *UpdateToolRequest) (*AssistantsV1Tool, error) {
 	var out AssistantsV1Tool
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "PUT", path: "/v1/Tools/" + toolID, json: params,
+		method: "PUT", path: apiRoute("/v1", "Tools", toolID), json: params,
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -556,18 +556,18 @@ func (s *AssistantsV1Service) UpdateTool(ctx context.Context, toolID string, par
 // DeleteTool removes a Tool.
 func (s *AssistantsV1Service) DeleteTool(ctx context.Context, toolID string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Tools/" + toolID,
+		method: "DELETE", path: apiRoute("/v1", "Tools", toolID),
 	}, nil)
 }
 
 // ListAssistantTools returns a page of Tools attached to a specific
 // Assistant. The endpoint is /v1/Assistants/{id}/Tools — equivalent to
-// ListTools with AssistantID set, but the SDK exposes both for parity
-// with the spec's two operation IDs.
+// ListTools with AssistantID set; the SDK exposes both to mirror the
+// spec's two operation IDs.
 func (s *AssistantsV1Service) ListAssistantTools(ctx context.Context, assistantID string, params V1PageParams) (*AssistantsV1ToolList, error) {
 	var out AssistantsV1ToolList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Assistants/" + assistantID + "/Tools", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Assistants", assistantID, "Tools"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -577,14 +577,14 @@ func (s *AssistantsV1Service) ListAssistantTools(ctx context.Context, assistantI
 // AttachToolToAssistant attaches an existing Tool to an Assistant. 204 success.
 func (s *AssistantsV1Service) AttachToolToAssistant(ctx context.Context, assistantID, toolID string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Assistants/" + assistantID + "/Tools/" + toolID,
+		method: "POST", path: apiRoute("/v1", "Assistants", assistantID, "Tools", toolID),
 	}, nil)
 }
 
 // DetachToolFromAssistant detaches a Tool from an Assistant. 204 success.
 func (s *AssistantsV1Service) DetachToolFromAssistant(ctx context.Context, assistantID, toolID string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Assistants/" + assistantID + "/Tools/" + toolID,
+		method: "DELETE", path: apiRoute("/v1", "Assistants", assistantID, "Tools", toolID),
 	}, nil)
 }
 
@@ -594,7 +594,7 @@ func (s *AssistantsV1Service) DetachToolFromAssistant(ctx context.Context, assis
 func (s *AssistantsV1Service) CreateKnowledge(ctx context.Context, params *CreateKnowledgeRequest) (*AssistantsV1Knowledge, error) {
 	var out AssistantsV1Knowledge
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Knowledge", json: params,
+		method: "POST", path: apiRoute("/v1", "Knowledge"), json: params,
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -606,7 +606,7 @@ func (s *AssistantsV1Service) CreateKnowledge(ctx context.Context, params *Creat
 func (s *AssistantsV1Service) ListKnowledge(ctx context.Context, params ListKnowledgeParams) (*AssistantsV1KnowledgeList, error) {
 	var out AssistantsV1KnowledgeList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Knowledge", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Knowledge"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -617,7 +617,7 @@ func (s *AssistantsV1Service) ListKnowledge(ctx context.Context, params ListKnow
 func (s *AssistantsV1Service) FetchKnowledge(ctx context.Context, knowledgeID string) (*AssistantsV1Knowledge, error) {
 	var out AssistantsV1Knowledge
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Knowledge/" + knowledgeID,
+		method: "GET", path: apiRoute("/v1", "Knowledge", knowledgeID),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -628,7 +628,7 @@ func (s *AssistantsV1Service) FetchKnowledge(ctx context.Context, knowledgeID st
 func (s *AssistantsV1Service) UpdateKnowledge(ctx context.Context, knowledgeID string, params *UpdateKnowledgeRequest) (*AssistantsV1Knowledge, error) {
 	var out AssistantsV1Knowledge
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "PUT", path: "/v1/Knowledge/" + knowledgeID, json: params,
+		method: "PUT", path: apiRoute("/v1", "Knowledge", knowledgeID), json: params,
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -638,7 +638,7 @@ func (s *AssistantsV1Service) UpdateKnowledge(ctx context.Context, knowledgeID s
 // DeleteKnowledge removes a Knowledge source.
 func (s *AssistantsV1Service) DeleteKnowledge(ctx context.Context, knowledgeID string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Knowledge/" + knowledgeID,
+		method: "DELETE", path: apiRoute("/v1", "Knowledge", knowledgeID),
 	}, nil)
 }
 
@@ -647,7 +647,7 @@ func (s *AssistantsV1Service) DeleteKnowledge(ctx context.Context, knowledgeID s
 func (s *AssistantsV1Service) FetchKnowledgeStatus(ctx context.Context, knowledgeID string) (*AssistantsV1KnowledgeStatus, error) {
 	var out AssistantsV1KnowledgeStatus
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Knowledge/" + knowledgeID + "/Status",
+		method: "GET", path: apiRoute("/v1", "Knowledge", knowledgeID, "Status"),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -658,7 +658,7 @@ func (s *AssistantsV1Service) FetchKnowledgeStatus(ctx context.Context, knowledg
 func (s *AssistantsV1Service) ListKnowledgeChunks(ctx context.Context, knowledgeID string, params V1PageParams) (*AssistantsV1KnowledgeChunkList, error) {
 	var out AssistantsV1KnowledgeChunkList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Knowledge/" + knowledgeID + "/Chunks", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Knowledge", knowledgeID, "Chunks"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -670,7 +670,7 @@ func (s *AssistantsV1Service) ListKnowledgeChunks(ctx context.Context, knowledge
 func (s *AssistantsV1Service) ListAssistantKnowledge(ctx context.Context, assistantID string, params V1PageParams) (*AssistantsV1KnowledgeList, error) {
 	var out AssistantsV1KnowledgeList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Assistants/" + assistantID + "/Knowledge", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Assistants", assistantID, "Knowledge"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -680,14 +680,14 @@ func (s *AssistantsV1Service) ListAssistantKnowledge(ctx context.Context, assist
 // AttachKnowledgeToAssistant attaches existing Knowledge to an Assistant. 204 success.
 func (s *AssistantsV1Service) AttachKnowledgeToAssistant(ctx context.Context, assistantID, knowledgeID string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Assistants/" + assistantID + "/Knowledge/" + knowledgeID,
+		method: "POST", path: apiRoute("/v1", "Assistants", assistantID, "Knowledge", knowledgeID),
 	}, nil)
 }
 
 // DetachKnowledgeFromAssistant detaches Knowledge from an Assistant. 204 success.
 func (s *AssistantsV1Service) DetachKnowledgeFromAssistant(ctx context.Context, assistantID, knowledgeID string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Assistants/" + assistantID + "/Knowledge/" + knowledgeID,
+		method: "DELETE", path: apiRoute("/v1", "Assistants", assistantID, "Knowledge", knowledgeID),
 	}, nil)
 }
 
@@ -699,7 +699,7 @@ func (s *AssistantsV1Service) DetachKnowledgeFromAssistant(ctx context.Context, 
 func (s *AssistantsV1Service) SendMessage(ctx context.Context, assistantID string, params *SendMessageRequest) (*AssistantsV1SendMessageResponse, error) {
 	var out AssistantsV1SendMessageResponse
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Assistants/" + assistantID + "/Messages", json: params,
+		method: "POST", path: apiRoute("/v1", "Assistants", assistantID, "Messages"), json: params,
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -710,7 +710,7 @@ func (s *AssistantsV1Service) SendMessage(ctx context.Context, assistantID strin
 func (s *AssistantsV1Service) ListSessions(ctx context.Context, params V1PageParams) (*AssistantsV1SessionList, error) {
 	var out AssistantsV1SessionList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Sessions", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Sessions"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -721,7 +721,7 @@ func (s *AssistantsV1Service) ListSessions(ctx context.Context, params V1PagePar
 func (s *AssistantsV1Service) FetchSession(ctx context.Context, sessionID string) (*AssistantsV1Session, error) {
 	var out AssistantsV1Session
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Sessions/" + sessionID,
+		method: "GET", path: apiRoute("/v1", "Sessions", sessionID),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -732,7 +732,7 @@ func (s *AssistantsV1Service) FetchSession(ctx context.Context, sessionID string
 func (s *AssistantsV1Service) ListSessionMessages(ctx context.Context, sessionID string, params V1PageParams) (*AssistantsV1MessageList, error) {
 	var out AssistantsV1MessageList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Sessions/" + sessionID + "/Messages", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Sessions", sessionID, "Messages"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -745,7 +745,7 @@ func (s *AssistantsV1Service) ListSessionMessages(ctx context.Context, sessionID
 func (s *AssistantsV1Service) ListAssistantFeedback(ctx context.Context, assistantID string, params V1PageParams) (*AssistantsV1FeedbackList, error) {
 	var out AssistantsV1FeedbackList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Assistants/" + assistantID + "/Feedbacks", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Assistants", assistantID, "Feedbacks"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -757,7 +757,7 @@ func (s *AssistantsV1Service) ListAssistantFeedback(ctx context.Context, assista
 func (s *AssistantsV1Service) CreateFeedback(ctx context.Context, assistantID string, params *CreateFeedbackRequest) (*AssistantsV1Feedback, error) {
 	var out AssistantsV1Feedback
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Assistants/" + assistantID + "/Feedbacks", json: params,
+		method: "POST", path: apiRoute("/v1", "Assistants", assistantID, "Feedbacks"), json: params,
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -771,7 +771,7 @@ func (s *AssistantsV1Service) CreateFeedback(ctx context.Context, assistantID st
 func (s *AssistantsV1Service) ListPolicies(ctx context.Context, params ListPoliciesParams) (*AssistantsV1PolicyList, error) {
 	var out AssistantsV1PolicyList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Policies", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Policies"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}

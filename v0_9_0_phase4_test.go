@@ -237,13 +237,13 @@ func TestConversationsV1ServicePaths(t *testing.T) {
 			invoke: func(c *voiceml.Client) error {
 				_, err := c.ConversationsV1.CreateServiceParticipant(context.Background(), convChatSvc, convSid, voiceml.CreateServiceParticipantRequest{
 					Identity:                voiceml.String("alice"),
-					MessagingBindingAddress: voiceml.String("+15551234567"),
+					MessagingBindingAddress: voiceml.String("+14155550103"),
 				})
 				return err
 			},
 			assertBody: func(t *testing.T, body, _ url.Values) {
 				if body.Get("Identity") != "alice" ||
-					body.Get("MessagingBinding.Address") != "+15551234567" {
+					body.Get("MessagingBinding.Address") != "+14155550103" {
 					t.Fatalf("body: %+v", body)
 				}
 			},
@@ -353,7 +353,7 @@ func TestConversationsV1ServicePaths(t *testing.T) {
 					FriendlyName: voiceml.String("team"),
 					Participant: []string{
 						`{"identity":"alice"}`,
-						`{"messaging_binding":{"address":"+15551234567"}}`,
+						`{"messaging_binding":{"address":"+14155550103"}}`,
 					},
 				})
 				return err
@@ -389,7 +389,7 @@ func TestConversationsV1ServicePaths(t *testing.T) {
 			method: "GET", path: svcBase() + "/ParticipantConversations",
 			invoke: func(c *voiceml.Client) error {
 				out, err := c.ConversationsV1.ListServiceParticipantConversations(context.Background(), convChatSvc, voiceml.ListServiceParticipantConversationsParams{
-					Address:  voiceml.String("+15551234567"),
+					Address:  voiceml.String("+14155550103"),
 					PageSize: voiceml.Int(50),
 				})
 				if err != nil {
@@ -401,7 +401,7 @@ func TestConversationsV1ServicePaths(t *testing.T) {
 				return nil
 			},
 			assertBody: func(t *testing.T, _, q url.Values) {
-				if q.Get("Address") != "+15551234567" || q.Get("PageSize") != "50" {
+				if q.Get("Address") != "+14155550103" || q.Get("PageSize") != "50" {
 					t.Fatalf("query: %+v", q)
 				}
 			},
@@ -717,7 +717,7 @@ func TestConversationsV1ServiceDecodes(t *testing.T) {
 		if out.ReachabilityEnabled == nil || !*out.ReachabilityEnabled {
 			t.Fatalf("reachability_enabled: %+v", out.ReachabilityEnabled)
 		}
-		if !strings.HasSuffix(out.Links["notifications"], "/Notifications") {
+		if link, _ := out.Links["notifications"].(string); !strings.HasSuffix(link, "/Notifications") {
 			t.Fatalf("links: %+v", out.Links)
 		}
 	})

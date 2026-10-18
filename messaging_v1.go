@@ -1,4 +1,4 @@
-// Messaging v1 (messaging.twilio.com/v1) resources: the Messaging Service
+// Twilio-compatible Messaging v1 resources: the Messaging Service
 // (MG...) CRUD surface under /v1/Services.
 //
 // A Messaging Service shares the /v1/Services path shape with the Conversations
@@ -50,6 +50,10 @@ type MessagingService struct {
 	URL                       *string `json:"url"`
 	Usecase                   *string `json:"usecase"`
 	UseInboundWebhookOnNumber *bool   `json:"use_inbound_webhook_on_number"`
+	// AdvancedOptOut reports whether inbound webhooks carry
+	// OptOutType=START|STOP|HELP for keyword matches (a VoiceML extension,
+	// read-only over the API).
+	AdvancedOptOut *bool `json:"advanced_opt_out,omitempty"`
 }
 
 // MessagingServiceList is the paginated /v1/Services response on the messaging
@@ -193,22 +197,22 @@ func setMessagingServiceOptional(v url.Values, o messagingServiceOptional) {
 // Services.
 // ---------------------------------------------------------------------------
 
-// MessagingV1Service bundles the messaging.twilio.com/v1 sub-services. Reach it
+// MessagingV1Service bundles the Messaging /v1 sub-services. Reach it
 // as c.MessagingV1.
 type MessagingV1Service struct {
 	// Services — CRUD on /v1/Services Messaging Services (MG...).
 	Services *MessagingV1ServicesService
 }
 
-// MessagingV1ServicesService surfaces the /v1/Services CRUD verbs on the
-// messaging host.
+// MessagingV1ServicesService surfaces the /v1/Services CRUD verbs and each
+// service's PhoneNumbers sender pool on the messaging host.
 type MessagingV1ServicesService struct{ t *transport }
 
 // Create adds a Messaging Service.
 func (s *MessagingV1ServicesService) Create(ctx context.Context, params CreateMessagingServiceParams) (*MessagingService, error) {
 	var out MessagingService
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -219,7 +223,7 @@ func (s *MessagingV1ServicesService) Create(ctx context.Context, params CreateMe
 func (s *MessagingV1ServicesService) List(ctx context.Context, params V1PageParams) (*MessagingServiceList, error) {
 	var out MessagingServiceList
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "Services"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -230,7 +234,7 @@ func (s *MessagingV1ServicesService) List(ctx context.Context, params V1PagePara
 func (s *MessagingV1ServicesService) Fetch(ctx context.Context, sid string) (*MessagingService, error) {
 	var out MessagingService
 	if err := s.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Services/" + sid,
+		method: "GET", path: apiRoute("/v1", "Services", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -241,7 +245,7 @@ func (s *MessagingV1ServicesService) Fetch(ctx context.Context, sid string) (*Me
 func (s *MessagingV1ServicesService) Update(ctx context.Context, sid string, params UpdateMessagingServiceParams) (*MessagingService, error) {
 	var out MessagingService
 	if err := s.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Services/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Services", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -251,6 +255,100 @@ func (s *MessagingV1ServicesService) Update(ctx context.Context, sid string, par
 // Delete removes a Messaging Service.
 func (s *MessagingV1ServicesService) Delete(ctx context.Context, sid string) error {
 	return s.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/Services/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "Services", sid),
+	}, nil)
+}
+
+// ---------------------------------------------------------------------------
+// Sender pool: /v1/Services/{ServiceSid}/PhoneNumbers
+// ---------------------------------------------------------------------------
+
+// MessagingServicePhoneNumber is one phone number in a Messaging Service's
+// sender pool. Sid is the referenced IncomingPhoneNumber's PN sid;
+// Capabilities lists "Voice", "SMS" and/or "MMS".
+type MessagingServicePhoneNumber struct {
+	Sid          string   `json:"sid"`
+	AccountSid   string   `json:"account_sid"`
+	ServiceSid   string   `json:"service_sid"`
+	DateCreated  string   `json:"date_created"`
+	DateUpdated  string   `json:"date_updated"`
+	PhoneNumber  string   `json:"phone_number"`
+	CountryCode  string   `json:"country_code"`
+	Capabilities []string `json:"capabilities"`
+	URL          string   `json:"url"`
+}
+
+// MessagingServicePhoneNumberList is the paginated sender-pool response.
+type MessagingServicePhoneNumberList struct {
+	PhoneNumbers []MessagingServicePhoneNumber `json:"phone_numbers"`
+	Meta         VoiceV1Meta                   `json:"meta"`
+}
+
+// ListMessagingServicePhoneNumbersParams are the query params for
+// GET /v1/Services/{ServiceSid}/PhoneNumbers.
+type ListMessagingServicePhoneNumbersParams struct {
+	Page     *int
+	PageSize *int
+}
+
+func (p ListMessagingServicePhoneNumbersParams) query() url.Values {
+	v := url.Values{}
+	setInt(v, "Page", p.Page)
+	setInt(v, "PageSize", p.PageSize)
+	return v
+}
+
+// CreateMessagingServicePhoneNumberParams is the body for
+// POST /v1/Services/{ServiceSid}/PhoneNumbers. PhoneNumberSid (PN...) is
+// the IncomingPhoneNumber to add to the pool.
+type CreateMessagingServicePhoneNumberParams struct {
+	PhoneNumberSid string `form:"PhoneNumberSid"`
+}
+
+func (p CreateMessagingServicePhoneNumberParams) form() url.Values {
+	v := url.Values{}
+	v.Set("PhoneNumberSid", p.PhoneNumberSid)
+	return v
+}
+
+// ListPhoneNumbers returns a page of a Messaging Service's sender pool.
+func (s *MessagingV1ServicesService) ListPhoneNumbers(ctx context.Context, serviceSid string, params ListMessagingServicePhoneNumbersParams) (*MessagingServicePhoneNumberList, error) {
+	var out MessagingServicePhoneNumberList
+	if err := s.t.do(ctx, requestOpts{
+		method: "GET", path: apiRoute("/v1", "Services", serviceSid, "PhoneNumbers"), query: params.query(),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// CreatePhoneNumber adds an IncomingPhoneNumber to a Messaging Service's
+// sender pool. A number already in another service's pool is rejected
+// with 409.
+func (s *MessagingV1ServicesService) CreatePhoneNumber(ctx context.Context, serviceSid string, params CreateMessagingServicePhoneNumberParams) (*MessagingServicePhoneNumber, error) {
+	var out MessagingServicePhoneNumber
+	if err := s.t.do(ctx, requestOpts{
+		method: "POST", path: apiRoute("/v1", "Services", serviceSid, "PhoneNumbers"), form: params.form(),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// FetchPhoneNumber retrieves one sender-pool entry.
+func (s *MessagingV1ServicesService) FetchPhoneNumber(ctx context.Context, serviceSid, sid string) (*MessagingServicePhoneNumber, error) {
+	var out MessagingServicePhoneNumber
+	if err := s.t.do(ctx, requestOpts{
+		method: "GET", path: apiRoute("/v1", "Services", serviceSid, "PhoneNumbers", sid),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeletePhoneNumber removes a number from a Messaging Service's sender pool.
+func (s *MessagingV1ServicesService) DeletePhoneNumber(ctx context.Context, serviceSid, sid string) error {
+	return s.t.do(ctx, requestOpts{
+		method: "DELETE", path: apiRoute("/v1", "Services", serviceSid, "PhoneNumbers", sid),
 	}, nil)
 }

@@ -7,8 +7,9 @@ import (
 )
 
 // CallsService is the /Calls resource group plus per-call sub-resources
-// (Recordings, Streams, Siprec, Transcriptions, Notifications, Events,
-// UserDefinedMessages).
+// (Recordings, Streams, Siprec, Transcriptions, Payments, Notifications,
+// Events, UserDefinedMessages). Streams, Siprec and Transcriptions are
+// start/stop only: the server does not list or fetch them.
 type CallsService struct{ c *Client }
 
 // Call is a Twilio-compatible Call resource.
@@ -50,7 +51,7 @@ type CallList struct {
 
 // CreateCallParams is the body for POST /Calls. To and From are required;
 // set exactly one of URL / Twiml / ApplicationSid (Twiml wins if multiple
-// are set — Twilio's documented precedence).
+// are set — the Twilio-compatible precedence).
 type CreateCallParams struct {
 	To   string `form:"To"`
 	From string `form:"From"`
@@ -164,8 +165,8 @@ func (p UpdateCallParams) form() url.Values {
 }
 
 // ListCallsParams are the filter / pagination query params for GET /Calls.
-// StartTimeGte / StartTimeLte map to the legacy Twilio query keys
-// "StartTime>=" / "StartTime<=" on the wire.
+// StartTimeLt / StartTimeGt map to the "StartTime<" / "StartTime>" query
+// keys (and EndTimeLt / EndTimeGt to "EndTime<" / "EndTime>").
 type ListCallsParams struct {
 	To            string
 	From          string
@@ -177,8 +178,6 @@ type ListCallsParams struct {
 	EndTime       string
 	EndTimeLt     string
 	EndTimeGt     string
-	StartTimeGte  string
-	StartTimeLte  string
 	Page          *int
 	PageSize      *int
 	PageToken     string
@@ -196,8 +195,6 @@ func (p ListCallsParams) query() url.Values {
 	setString(v, "EndTime", p.EndTime)
 	setString(v, "EndTime<", p.EndTimeLt)
 	setString(v, "EndTime>", p.EndTimeGt)
-	setString(v, "StartTime>=", p.StartTimeGte)
-	setString(v, "StartTime<=", p.StartTimeLte)
 	setIntP(v, "Page", p.Page)
 	setIntP(v, "PageSize", p.PageSize)
 	setString(v, "PageToken", p.PageToken)
@@ -334,7 +331,7 @@ func (s *CallsService) GetRecording(ctx context.Context, callSid, recordingSid s
 
 // UpdateRecording changes the state of an in-progress recording on this call:
 // pause, resume, or stop. POST /Calls/{sid}/Recordings/{rsid}.
-func (s *CallsService) UpdateRecording(ctx context.Context, callSid, recordingSid string, params UpdateRecordingParams) (*Recording, error) {
+func (s *CallsService) UpdateRecording(ctx context.Context, callSid, recordingSid string, params UpdateCallRecordingParams) (*Recording, error) {
 	var out Recording
 	err := s.c.t.do(ctx, requestOpts{
 		method: "POST",
@@ -358,23 +355,16 @@ func (s *CallsService) DeleteRecording(ctx context.Context, callSid, recordingSi
 
 // --- Streams ---
 
-// Stream is a media-stream session on a call (REST equivalent of <Start><Stream>).
+// Stream is a media-stream session on a call (REST equivalent of
+// <Start><Stream>). Status is "in-progress" or "stopped".
 type Stream struct {
 	Sid         string `json:"sid"`
 	AccountSid  string `json:"account_sid"`
 	CallSid     string `json:"call_sid"`
 	Name        string `json:"name,omitempty"`
 	Status      string `json:"status"`
-	APIVersion  string `json:"api_version"`
 	URI         string `json:"uri"`
-	DateCreated string `json:"date_created,omitempty"`
 	DateUpdated string `json:"date_updated,omitempty"`
-}
-
-// StreamList is the paginated /Calls/{sid}/Streams list response.
-type StreamList struct {
-	Page
-	Streams []Stream `json:"streams"`
 }
 
 // StartStreamParams is the body for POST /Calls/{sid}/Streams. URL is the
@@ -409,19 +399,6 @@ func (p StopStreamParams) form() url.Values {
 	return v
 }
 
-// ListStreams returns streams on this call. GET /Calls/{sid}/Streams.
-func (s *CallsService) ListStreams(ctx context.Context, callSid string) (*StreamList, error) {
-	var out StreamList
-	err := s.c.t.do(ctx, requestOpts{
-		method: "GET",
-		path:   s.c.pathf("Calls", callSid, "Streams"),
-	}, &out)
-	if err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
 // StartStream opens a new wss media stream on the live call.
 // POST /Calls/{sid}/Streams.
 func (s *CallsService) StartStream(ctx context.Context, callSid string, params StartStreamParams) (*Stream, error) {
@@ -430,20 +407,6 @@ func (s *CallsService) StartStream(ctx context.Context, callSid string, params S
 		method: "POST",
 		path:   s.c.pathf("Calls", callSid, "Streams"),
 		form:   params.form(),
-	}, &out)
-	if err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// GetStream fetches a stream's current state.
-// GET /Calls/{sid}/Streams/{sid}.
-func (s *CallsService) GetStream(ctx context.Context, callSid, streamSid string) (*Stream, error) {
-	var out Stream
-	err := s.c.t.do(ctx, requestOpts{
-		method: "GET",
-		path:   s.c.pathf("Calls", callSid, "Streams", streamSid),
 	}, &out)
 	if err != nil {
 		return nil, err
@@ -472,24 +435,16 @@ func (s *CallsService) StopStream(ctx context.Context, callSid, streamSid string
 
 // --- SIPREC ---
 
-// SiprecSession is a SIPREC recording session on a call (REST equivalent of <Start><Siprec>).
+// SiprecSession is a SIPREC recording session on a call (REST equivalent
+// of <Start><Siprec>). Status is "in-progress" or "stopped".
 type SiprecSession struct {
-	Sid           string `json:"sid"`
-	AccountSid    string `json:"account_sid"`
-	CallSid       string `json:"call_sid"`
-	Name          string `json:"name,omitempty"`
-	ConnectorName string `json:"connector_name,omitempty"`
-	Status        string `json:"status"`
-	APIVersion    string `json:"api_version"`
-	URI           string `json:"uri"`
-	DateCreated   string `json:"date_created,omitempty"`
-	DateUpdated   string `json:"date_updated,omitempty"`
-}
-
-// SiprecList is the paginated /Calls/{sid}/Siprec list response.
-type SiprecList struct {
-	Page
-	Siprec []SiprecSession `json:"siprec"`
+	Sid         string `json:"sid"`
+	AccountSid  string `json:"account_sid"`
+	CallSid     string `json:"call_sid"`
+	Name        string `json:"name,omitempty"`
+	Status      string `json:"status"`
+	URI         string `json:"uri"`
+	DateUpdated string `json:"date_updated,omitempty"`
 }
 
 // StartSiprecParams is the body for POST /Calls/{sid}/Siprec.
@@ -524,19 +479,6 @@ func (p StopSiprecParams) form() url.Values {
 	return v
 }
 
-// ListSiprec returns SIPREC sessions on this call. GET /Calls/{sid}/Siprec.
-func (s *CallsService) ListSiprec(ctx context.Context, callSid string) (*SiprecList, error) {
-	var out SiprecList
-	err := s.c.t.do(ctx, requestOpts{
-		method: "GET",
-		path:   s.c.pathf("Calls", callSid, "Siprec"),
-	}, &out)
-	if err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
 // StartSiprec opens a new SIPREC session on the live call.
 // POST /Calls/{sid}/Siprec. Pass nil for default options.
 func (s *CallsService) StartSiprec(ctx context.Context, callSid string, params *StartSiprecParams) (*SiprecSession, error) {
@@ -549,20 +491,6 @@ func (s *CallsService) StartSiprec(ctx context.Context, callSid string, params *
 		method: "POST",
 		path:   s.c.pathf("Calls", callSid, "Siprec"),
 		form:   form,
-	}, &out)
-	if err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// GetSiprec fetches a SIPREC session's current state.
-// GET /Calls/{sid}/Siprec/{sid}.
-func (s *CallsService) GetSiprec(ctx context.Context, callSid, siprecSid string) (*SiprecSession, error) {
-	var out SiprecSession
-	err := s.c.t.do(ctx, requestOpts{
-		method: "GET",
-		path:   s.c.pathf("Calls", callSid, "Siprec", siprecSid),
 	}, &out)
 	if err != nil {
 		return nil, err
@@ -594,23 +522,13 @@ func (s *CallsService) StopSiprec(ctx context.Context, callSid, siprecSid string
 // CallTranscription is a live per-call transcription session. Transcript
 // events stream via StatusCallback rather than this resource.
 type CallTranscription struct {
-	Sid                 string `json:"sid"`
-	AccountSid          string `json:"account_sid"`
-	CallSid             string `json:"call_sid"`
-	Name                string `json:"name,omitempty"`
-	LanguageCode        string `json:"language_code,omitempty"`
-	TranscriptionEngine string `json:"transcription_engine,omitempty"`
-	Status              string `json:"status"`
-	APIVersion          string `json:"api_version"`
-	URI                 string `json:"uri"`
-	DateCreated         string `json:"date_created,omitempty"`
-	DateUpdated         string `json:"date_updated,omitempty"`
-}
-
-// TranscriptionList is the paginated /Calls/{sid}/Transcriptions list response.
-type TranscriptionList struct {
-	Page
-	Transcriptions []CallTranscription `json:"transcriptions"`
+	Sid         string `json:"sid"`
+	AccountSid  string `json:"account_sid"`
+	CallSid     string `json:"call_sid"`
+	Name        string `json:"name,omitempty"`
+	Status      string `json:"status"`
+	URI         string `json:"uri"`
+	DateUpdated string `json:"date_updated,omitempty"`
 }
 
 // StartTranscriptionParams is the body for POST /Calls/{sid}/Transcriptions.
@@ -653,20 +571,6 @@ func (p StopTranscriptionParams) form() url.Values {
 	return v
 }
 
-// ListTranscriptions returns transcription sessions on this call.
-// GET /Calls/{sid}/Transcriptions.
-func (s *CallsService) ListTranscriptions(ctx context.Context, callSid string) (*TranscriptionList, error) {
-	var out TranscriptionList
-	err := s.c.t.do(ctx, requestOpts{
-		method: "GET",
-		path:   s.c.pathf("Calls", callSid, "Transcriptions"),
-	}, &out)
-	if err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
 // StartTranscription opens a new live transcription session.
 // POST /Calls/{sid}/Transcriptions. Pass nil for default options.
 func (s *CallsService) StartTranscription(ctx context.Context, callSid string, params *StartTranscriptionParams) (*CallTranscription, error) {
@@ -679,20 +583,6 @@ func (s *CallsService) StartTranscription(ctx context.Context, callSid string, p
 		method: "POST",
 		path:   s.c.pathf("Calls", callSid, "Transcriptions"),
 		form:   form,
-	}, &out)
-	if err != nil {
-		return nil, err
-	}
-	return &out, nil
-}
-
-// GetTranscription fetches a transcription session's current state.
-// GET /Calls/{sid}/Transcriptions/{sid}.
-func (s *CallsService) GetTranscription(ctx context.Context, callSid, transcriptionSid string) (*CallTranscription, error) {
-	var out CallTranscription
-	err := s.c.t.do(ctx, requestOpts{
-		method: "GET",
-		path:   s.c.pathf("Calls", callSid, "Transcriptions", transcriptionSid),
 	}, &out)
 	if err != nil {
 		return nil, err
@@ -719,31 +609,80 @@ func (s *CallsService) StopTranscription(ctx context.Context, callSid, transcrip
 	return &out, nil
 }
 
-// --- Notifications / Events (compat stubs — always empty) ---
+// --- Notifications / Events ---
 
-// NotificationsList is the always-empty compat stub for /Calls/{sid}/Notifications.
-type NotificationsList struct {
-	Notifications []any  `json:"notifications"`
-	Page          int    `json:"page"`
-	PageSize      int    `json:"page_size"`
-	Total         int    `json:"total"`
-	URI           string `json:"uri,omitempty"`
+// Notification is an alert-log entry: the TwiML document fetch or parse
+// failures and verb refusals recorded against a call (error codes follow
+// the Twilio-compatible error dictionary, e.g. 11200, 12100). APIVersion,
+// MessageText, RequestMethod and RequestURL are empty for a notification a
+// verb raised with no request of its own.
+type Notification struct {
+	Sid           string `json:"sid"`
+	AccountSid    string `json:"account_sid"`
+	CallSid       string `json:"call_sid"`
+	APIVersion    string `json:"api_version"`
+	ErrorCode     string `json:"error_code"`
+	Log           string `json:"log"`
+	MessageDate   string `json:"message_date"`
+	MessageText   string `json:"message_text"`
+	MoreInfo      string `json:"more_info"`
+	RequestMethod string `json:"request_method"`
+	RequestURL    string `json:"request_url"`
+	URI           string `json:"uri"`
+	DateCreated   string `json:"date_created"`
+	DateUpdated   string `json:"date_updated"`
 }
 
-// EventsList is the always-empty compat stub for /Calls/{sid}/Events.
-// The canonical event source is the customer's StatusCallback URL.
-type EventsList struct {
-	Events   []any  `json:"events"`
-	Page     int    `json:"page"`
-	PageSize int    `json:"page_size"`
-	Total    int    `json:"total"`
-	URI      string `json:"uri,omitempty"`
+// NotificationList is the paginated /Notifications (account) and
+// /Calls/{sid}/Notifications response.
+type NotificationList struct {
+	Page
+	Notifications []Notification `json:"notifications"`
 }
 
-// ListNotifications hits the compat stub at /Calls/{sid}/Notifications.
-// Always returns an empty list when the call exists.
-func (s *CallsService) ListNotifications(ctx context.Context, callSid string, params ListNotificationsParams) (*NotificationsList, error) {
-	var out NotificationsList
+// NotificationsList is the former name of NotificationList.
+//
+// Deprecated: use NotificationList.
+type NotificationsList = NotificationList
+
+// CallEventRequest is the request half of a CallEvent.
+type CallEventRequest struct {
+	Method     string            `json:"method"`
+	Parameters map[string]string `json:"parameters"`
+	URL        string            `json:"url"`
+}
+
+// CallEventResponse is the response half of a CallEvent.
+type CallEventResponse struct {
+	ContentType     string `json:"content_type"`
+	DateCreated     string `json:"date_created"`
+	RequestDuration int    `json:"request_duration"`
+	ResponseBody    string `json:"response_body"`
+	ResponseCode    int    `json:"response_code"`
+}
+
+// CallEvent is one REST request/response recorded against a call (the
+// create and each update).
+type CallEvent struct {
+	Request  CallEventRequest  `json:"request"`
+	Response CallEventResponse `json:"response"`
+}
+
+// CallEventList is the paginated /Calls/{sid}/Events response.
+type CallEventList struct {
+	Page
+	Events []CallEvent `json:"events"`
+}
+
+// EventsList is the former name of CallEventList.
+//
+// Deprecated: use CallEventList.
+type EventsList = CallEventList
+
+// ListNotifications returns a page of notifications recorded for this call.
+// GET /Calls/{sid}/Notifications.
+func (s *CallsService) ListNotifications(ctx context.Context, callSid string, params ListNotificationsParams) (*NotificationList, error) {
+	var out NotificationList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Calls", callSid, "Notifications"),
@@ -755,9 +694,16 @@ func (s *CallsService) ListNotifications(ctx context.Context, callSid string, pa
 	return &out, nil
 }
 
-// GetNotification fetches a per-call notification. Always 404 today (compat stub).
-func (s *CallsService) GetNotification(ctx context.Context, callSid, notificationSid string) (map[string]any, error) {
-	var out map[string]any
+// IterateNotifications walks every notification for this call lazily.
+func (s *CallsService) IterateNotifications(ctx context.Context, callSid string, params ListNotificationsParams) *Pager[Notification] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Calls", callSid, "Notifications"), query: params.query()},
+		func(l *NotificationList) ([]Notification, PageLinks) { return l.Notifications, l.Page })
+}
+
+// GetNotification fetches one notification recorded for this call.
+// GET /Calls/{sid}/Notifications/{sid}.
+func (s *CallsService) GetNotification(ctx context.Context, callSid, notificationSid string) (*Notification, error) {
+	var out Notification
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Calls", callSid, "Notifications", notificationSid),
@@ -765,13 +711,13 @@ func (s *CallsService) GetNotification(ctx context.Context, callSid, notificatio
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	return &out, nil
 }
 
-// ListEvents hits the compat stub at /Calls/{sid}/Events. Always returns an
-// empty list when the call exists.
-func (s *CallsService) ListEvents(ctx context.Context, callSid string, params ListPageParams) (*EventsList, error) {
-	var out EventsList
+// ListEvents returns a page of the REST request/response events recorded
+// for this call. GET /Calls/{sid}/Events.
+func (s *CallsService) ListEvents(ctx context.Context, callSid string, params ListPageParams) (*CallEventList, error) {
+	var out CallEventList
 	err := s.c.t.do(ctx, requestOpts{
 		method: "GET",
 		path:   s.c.pathf("Calls", callSid, "Events"),
@@ -783,39 +729,35 @@ func (s *CallsService) ListEvents(ctx context.Context, callSid string, params Li
 	return &out, nil
 }
 
-// SendUserDefinedMessage forwards a JSON payload to
-// POST /Calls/{sid}/UserDefinedMessages. The server returns 501 — this method
-// exists only to surface a clean *APIError (errors.Is(err, ErrNotImplemented))
-// rather than make callers discover the missing endpoint at runtime.
-func (s *CallsService) SendUserDefinedMessage(ctx context.Context, callSid string, payload any) error {
+// IterateEvents walks every event recorded for this call lazily.
+func (s *CallsService) IterateEvents(ctx context.Context, callSid string, params ListPageParams) *Pager[CallEvent] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Calls", callSid, "Events"), query: params.query()},
+		func(l *CallEventList) ([]CallEvent, PageLinks) { return l.Events, l.Page })
+}
+
+// SendUserDefinedMessage calls POST /Calls/{sid}/UserDefinedMessages. The
+// server answers 501, so this always returns an *APIError for which
+// errors.Is(err, ErrNotImplemented) holds; the method exists so callers get
+// a typed error instead of discovering the missing endpoint at runtime.
+func (s *CallsService) SendUserDefinedMessage(ctx context.Context, callSid string) error {
 	return s.c.t.do(ctx, requestOpts{
 		method: "POST",
 		path:   s.c.pathf("Calls", callSid, "UserDefinedMessages"),
-		json:   payload,
+		form:   url.Values{},
 	}, nil)
 }
 
-// Iterate walks every page of /Calls matching the supplied filters and
-// returns the collected slice. Use for small-to-medium result sets; for very
-// large pulls, drive pagination manually via List(...).NextPageURI.
-func (s *CallsService) Iterate(ctx context.Context, params ListCallsParams) ([]Call, error) {
-	out := []Call{}
-	page := 0
-	if params.Page != nil {
-		page = *params.Page
-	}
-	for {
-		params.Page = &page
-		chunk, err := s.List(ctx, params)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, chunk.Calls...)
-		if chunk.NextPageURI == "" || len(chunk.Calls) == 0 {
-			return out, nil
-		}
-		page++
-	}
+// Iterate walks every call matching the filters lazily, following each
+// page's next_page_uri. See Pager.
+func (s *CallsService) Iterate(ctx context.Context, params ListCallsParams) *Pager[Call] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Calls"), query: params.query()},
+		func(l *CallList) ([]Call, PageLinks) { return l.Calls, l.Page })
+}
+
+// IterateRecordings walks every recording made on this call lazily.
+func (s *CallsService) IterateRecordings(ctx context.Context, callSid string, params ListCallRecordingsParams) *Pager[Recording] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Calls", callSid, "Recordings"), query: params.query()},
+		func(l *RecordingList) ([]Recording, PageLinks) { return l.Recordings, l.Page })
 }
 
 // --- helpers shared across param structs ---

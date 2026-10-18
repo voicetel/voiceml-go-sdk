@@ -46,7 +46,6 @@ type Participant struct {
 	EndConferenceOnExit    bool              `json:"end_conference_on_exit"`
 	Status                 ParticipantStatus `json:"status"`
 	Label                  string            `json:"label,omitempty"`
-	APIVersion             string            `json:"api_version"`
 	URI                    string            `json:"uri"`
 	DateCreated            string            `json:"date_created,omitempty"`
 	DateUpdated            string            `json:"date_updated,omitempty"`
@@ -182,25 +181,11 @@ func (s *ConferencesService) List(ctx context.Context, params ListConferencesPar
 	return &out, nil
 }
 
-// Iterate walks every page of /Conferences and returns the collected slice.
-func (s *ConferencesService) Iterate(ctx context.Context, params ListConferencesParams) ([]Conference, error) {
-	var out []Conference
-	page := 0
-	if params.Page != nil {
-		page = *params.Page
-	}
-	for {
-		params.Page = &page
-		chunk, err := s.List(ctx, params)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, chunk.Conferences...)
-		if chunk.NextPageURI == "" || len(chunk.Conferences) == 0 {
-			return out, nil
-		}
-		page++
-	}
+// Iterate walks every conference matching the filters lazily, following
+// each page's next_page_uri. See Pager.
+func (s *ConferencesService) Iterate(ctx context.Context, params ListConferencesParams) *Pager[Conference] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Conferences"), query: params.query()},
+		func(l *ConferenceList) ([]Conference, PageLinks) { return l.Conferences, l.Page })
 }
 
 // Get fetches a conference by SID. GET /Conferences/{sid}.
@@ -265,6 +250,12 @@ func (s *ConferencesService) ListParticipants(ctx context.Context, conferenceSid
 	return &out, nil
 }
 
+// IterateParticipants walks every participant in a conference lazily.
+func (s *ConferencesService) IterateParticipants(ctx context.Context, conferenceSid string, params ListParticipantsParams) *Pager[Participant] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Conferences", conferenceSid, "Participants"), query: params.query()},
+		func(l *ParticipantList) ([]Participant, PageLinks) { return l.Participants, l.Page })
+}
+
 // GetParticipant fetches a single participant by its call SID.
 // GET /Conferences/{sid}/Participants/{call_sid}.
 func (s *ConferencesService) GetParticipant(ctx context.Context, conferenceSid, callSid string) (*Participant, error) {
@@ -311,6 +302,47 @@ func (s *ConferencesService) ListRecordings(ctx context.Context, conferenceSid s
 		method: "GET",
 		path:   s.c.pathf("Conferences", conferenceSid, "Recordings"),
 		query:  params.query(),
+	}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// IterateRecordings walks every recording of a conference lazily.
+func (s *ConferencesService) IterateRecordings(ctx context.Context, conferenceSid string, params ListCallRecordingsParams) *Pager[Recording] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Conferences", conferenceSid, "Recordings"), query: params.query()},
+		func(l *RecordingList) ([]Recording, PageLinks) { return l.Recordings, l.Page })
+}
+
+// StartConferenceRecordingParams is the body for
+// POST /Conferences/{sid}/Recordings.
+type StartConferenceRecordingParams struct {
+	RecordingStatusCallback       *string `form:"RecordingStatusCallback"`
+	RecordingStatusCallbackMethod *string `form:"RecordingStatusCallbackMethod"`
+	RecordingStatusCallbackEvent  *string `form:"RecordingStatusCallbackEvent"`
+}
+
+func (p StartConferenceRecordingParams) form() url.Values {
+	v := url.Values{}
+	setStringP(v, "RecordingStatusCallback", p.RecordingStatusCallback)
+	setStringP(v, "RecordingStatusCallbackMethod", p.RecordingStatusCallbackMethod)
+	setStringP(v, "RecordingStatusCallbackEvent", p.RecordingStatusCallbackEvent)
+	return v
+}
+
+// StartRecording begins recording a live conference.
+// POST /Conferences/{sid}/Recordings. Pass nil for default options.
+func (s *ConferencesService) StartRecording(ctx context.Context, conferenceSid string, params *StartConferenceRecordingParams) (*Recording, error) {
+	var form url.Values
+	if params != nil {
+		form = params.form()
+	}
+	var out Recording
+	err := s.c.t.do(ctx, requestOpts{
+		method: "POST",
+		path:   s.c.pathf("Conferences", conferenceSid, "Recordings"),
+		form:   form,
 	}, &out)
 	if err != nil {
 		return nil, err

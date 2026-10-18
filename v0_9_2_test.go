@@ -191,7 +191,7 @@ func TestMessagingServiceCRUDOnMessagingHost(t *testing.T) {
 		createBody.Get("StickySender") != "true" {
 		t.Fatalf("create body: %v", createBody)
 	}
-	if msgRec.requests[1].Method != "GET" || !strings.Contains(msgRec.requests[1].Query, "PageSize=25") {
+	if msgRec.requests[1].Method != "GET" || msgRec.requests[1].Query != "PageSize=25" {
 		t.Fatalf("list req: %+v", msgRec.requests[1])
 	}
 	if msgRec.requests[2].Path != "/v1/Services/"+sid {
@@ -301,13 +301,13 @@ func TestPricingV1VoiceCountriesAndNumber(t *testing.T) {
 		"url":        "https://voiceml.voicetel.com/v1/Voice/Countries/US",
 	}
 	number := map[string]any{
-		"number":              "+18005551234",
+		"number":              "+14155550100",
 		"country":             "United States",
 		"iso_country":         "US",
 		"outbound_call_price": map[string]any{"base_price": "0.013", "current_price": "0.013"},
 		"inbound_call_price":  map[string]any{"base_price": "0.0085", "current_price": "0.0085", "number_type": "toll free"},
 		"price_unit":          "USD",
-		"url":                 "https://voiceml.voicetel.com/v1/Voice/Numbers/+18005551234",
+		"url":                 "https://voiceml.voicetel.com/v1/Voice/Numbers/+14155550100",
 	}
 	rec, srv := newServer(t, []handlerStep{
 		jsonStep(200, countries),
@@ -343,7 +343,7 @@ func TestPricingV1VoiceCountriesAndNumber(t *testing.T) {
 		t.Fatalf("country body: %+v", fetched)
 	}
 
-	num, err := c.Pricing.V1.Voice.Numbers.Fetch(ctx, "+18005551234")
+	num, err := c.Pricing.V1.Voice.Numbers.Fetch(ctx, "+14155550100")
 	if err != nil {
 		t.Fatalf("Numbers.Fetch: %v", err)
 	}
@@ -353,10 +353,10 @@ func TestPricingV1VoiceCountriesAndNumber(t *testing.T) {
 	}
 
 	// Number segment must be percent-encoded on the wire (+ -> %2B).
-	if rec.requests[2].RawPath != "/v1/Voice/Numbers/%2B18005551234" {
+	if rec.requests[2].RawPath != "/v1/Voice/Numbers/%2B14155550100" {
 		t.Fatalf("number segment not URL-encoded: raw=%q", rec.requests[2].RawPath)
 	}
-	if rec.requests[2].Path != "/v1/Voice/Numbers/+18005551234" {
+	if rec.requests[2].Path != "/v1/Voice/Numbers/+14155550100" {
 		t.Fatalf("decoded number path: %q", rec.requests[2].Path)
 	}
 }
@@ -365,8 +365,8 @@ func TestPricingV1VoiceCountriesAndNumber(t *testing.T) {
 // knob is sent and percent-encoded.
 func TestPricingV2VoiceNumberWithOrigination(t *testing.T) {
 	payload := map[string]any{
-		"destination_number": "+18005551234",
-		"origination_number": "+15551112222",
+		"destination_number": "+14155550100",
+		"origination_number": "+14155550107",
 		"country":            "United States",
 		"iso_country":        "US",
 		"outbound_call_prices": []any{
@@ -374,7 +374,7 @@ func TestPricingV2VoiceNumberWithOrigination(t *testing.T) {
 		},
 		"inbound_call_price": map[string]any{"base_price": "0.0085", "current_price": "0.0085", "number_type": "local"},
 		"price_unit":         "USD",
-		"url":                "https://voiceml.voicetel.com/v2/Voice/Numbers/+18005551234",
+		"url":                "https://voiceml.voicetel.com/v2/Voice/Numbers/+14155550100",
 	}
 	rec, srv := newServer(t, []handlerStep{jsonStep(200, payload)})
 	defer srv.Close()
@@ -387,19 +387,17 @@ func TestPricingV2VoiceNumberWithOrigination(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewClient: %v", err)
 	}
-	got, err := c.Pricing.V2.Voice.Numbers.Fetch(context.Background(), "+18005551234", voiceml.PricingNumberParams{
-		OriginationNumber: voiceml.String("+15551112222"),
+	got, err := c.Pricing.V2.Voice.Numbers.Fetch(context.Background(), "+14155550100", voiceml.PricingNumberParams{
+		OriginationNumber: voiceml.String("+14155550107"),
 	})
 	if err != nil {
 		t.Fatalf("Numbers.Fetch: %v", err)
 	}
-	if got.OriginationNumber == nil || *got.OriginationNumber != "+15551112222" {
+	if got.OriginationNumber == nil || *got.OriginationNumber != "+14155550107" {
 		t.Fatalf("origination number: %+v", got.OriginationNumber)
 	}
-	if !strings.Contains(rec.requests[0].Query, "OriginationNumber=%2B15551112222") {
-		t.Fatalf("query missing encoded OriginationNumber: %q", rec.requests[0].Query)
-	}
-	if rec.requests[0].RawPath != "/v2/Voice/Numbers/%2B18005551234" {
+	assertWire(t, "query", rec.requests[0].Query, "OriginationNumber=%2B14155550107")
+	if rec.requests[0].RawPath != "/v2/Voice/Numbers/%2B14155550100" {
 		t.Fatalf("dest number not URL-encoded: %q", rec.requests[0].RawPath)
 	}
 }

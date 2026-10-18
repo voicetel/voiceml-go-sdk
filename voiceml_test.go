@@ -114,6 +114,16 @@ func newClient(t *testing.T, responses []handlerStep, mutate func(*voiceml.Clien
 	return c, rec, srv.Close
 }
 
+// assertWire fails unless got is exactly want. Form bodies and query
+// strings are compared as raw bytes, so "+" vs "%2B", key spelling and
+// duplicate keys are all visible.
+func assertWire(t *testing.T, what, got, want string) {
+	t.Helper()
+	if got != want {
+		t.Errorf("%s:\n got  %q\n want %q", what, got, want)
+	}
+}
+
 func basicAuthHeader() string {
 	creds := testAccountSid + ":" + testAPIKey
 	return "Basic " + base64.StdEncoding.EncodeToString([]byte(creds))
@@ -154,6 +164,18 @@ func TestModuleSurface(t *testing.T) {
 		{"negative MaxRetries", voiceml.ClientOptions{
 			AccountSid: testAccountSid, APIKey: testAPIKey, MaxRetries: voiceml.Int(-1),
 		}, "MaxRetries must be >= 0"},
+		{"negative Timeout", voiceml.ClientOptions{
+			AccountSid: testAccountSid, APIKey: testAPIKey, Timeout: -1,
+		}, "Timeout must be >= 0"},
+		{"relative BaseURL", voiceml.ClientOptions{
+			AccountSid: testAccountSid, APIKey: testAPIKey, BaseURL: "voiceml.voicetel.com",
+		}, `BaseURL must use http or https, got "voiceml.voicetel.com"`},
+		{"BaseURL with credentials", voiceml.ClientOptions{
+			AccountSid: testAccountSid, APIKey: testAPIKey, BaseURL: "https://u:p@example.com",
+		}, "BaseURL must not embed credentials"},
+		{"BaseURL with query", voiceml.ClientOptions{
+			AccountSid: testAccountSid, APIKey: testAPIKey, BaseURL: "https://example.com/?x=1",
+		}, `BaseURL must not have a query or fragment: "https://example.com/?x=1"`},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -203,8 +225,8 @@ func TestCallsCreate(t *testing.T) {
 	defer cleanup()
 
 	call, err := c.Calls.Create(context.Background(), voiceml.CreateCallParams{
-		To:               "+18005551234",
-		From:             "+18005550000",
+		To:               "+14155550100",
+		From:             "+14155550101",
 		URL:              voiceml.String("https://example.com/twiml"),
 		MachineDetection: voiceml.String("DetectMessageEnd"),
 	})
@@ -232,27 +254,18 @@ func TestCallsCreate(t *testing.T) {
 	if got := req.Header.Get("Content-Type"); got != "application/x-www-form-urlencoded" {
 		t.Fatalf("Content-Type: want form-urlencoded, got %q", got)
 	}
-	body := string(req.Body)
-	for _, want := range []string{
-		"To=%2B18005551234",
-		"From=%2B18005550000",
-		"Url=https%3A%2F%2Fexample.com%2Ftwiml",
-		"MachineDetection=DetectMessageEnd",
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("body missing %q; got %q", want, body)
-		}
-	}
+	assertWire(t, "body", string(req.Body),
+		"From=%2B14155550101&MachineDetection=DetectMessageEnd&To=%2B14155550100&Url=https%3A%2F%2Fexample.com%2Ftwiml")
 }
 
-// 4. Calls.List — Twilio-compatible query params including StartTime>= / <=.
+// 4. Calls.List — only the spec's query keys: StartTime< / StartTime> (no
+// StartTime>= / StartTime<=), Status, Page, PageSize.
 func TestCallsListQueryParams(t *testing.T) {
 	c, rec, cleanup := newClient(t, []handlerStep{
 		jsonStep(200, map[string]any{
 			"calls":     []any{callPayload("")},
 			"page":      0,
 			"page_size": 50,
-			"total":     1,
 			"uri":       "/Calls",
 		}),
 	}, nil)
@@ -261,31 +274,18 @@ func TestCallsListQueryParams(t *testing.T) {
 	page := 0
 	pageSize := 10
 	_, err := c.Calls.List(context.Background(), voiceml.ListCallsParams{
-		Status:       "completed",
-		StartTimeGte: "2026-01-01",
-		StartTimeLte: "2026-12-31",
-		Page:         &page,
-		PageSize:     &pageSize,
+		Status:      "completed",
+		StartTimeGt: "2026-01-01",
+		StartTimeLt: "2026-12-31",
+		Page:        &page,
+		PageSize:    &pageSize,
 	})
 	if err != nil {
 		t.Fatalf("Calls.List: %v", err)
 	}
-
-	q := rec.requests[0].Query
-	// url.Values.Encode percent-encodes ">" / "<" / "=" in keys:
-	// ">" → %3E, "<" → %3C, "=" → %3D.
-	wants := []string{
-		"Status=completed",
-		"StartTime%3E%3D=2026-01-01",
-		"StartTime%3C%3D=2026-12-31",
-		"Page=0",
-		"PageSize=10",
-	}
-	for _, w := range wants {
-		if !strings.Contains(q, w) {
-			t.Errorf("query missing %q; got %q", w, q)
-		}
-	}
+	// url.Values.Encode percent-encodes "<" / ">" in keys: %3C / %3E.
+	assertWire(t, "query", rec.requests[0].Query,
+		"Page=0&PageSize=10&StartTime%3C=2026-12-31&StartTime%3E=2026-01-01&Status=completed")
 }
 
 // 5. Boolean encoding — Muted=true, Hold=false.
@@ -316,13 +316,7 @@ func TestParticipantBooleanEncoding(t *testing.T) {
 		t.Fatalf("UpdateParticipant: %v", err)
 	}
 
-	body := string(rec.requests[0].Body)
-	if !strings.Contains(body, "Muted=true") {
-		t.Errorf("body missing Muted=true; got %q", body)
-	}
-	if !strings.Contains(body, "Hold=false") {
-		t.Errorf("body missing Hold=false; got %q", body)
-	}
+	assertWire(t, "body", string(rec.requests[0].Body), "Hold=false&Muted=true")
 }
 
 // 6. Streams.Start — Url + Track + Name.
@@ -350,16 +344,7 @@ func TestStreamsStart(t *testing.T) {
 		t.Fatalf("StartStream: %v", err)
 	}
 
-	body := string(rec.requests[0].Body)
-	for _, want := range []string{
-		"Url=wss%3A%2F%2Fexample.com%2Fws",
-		"Track=both_tracks",
-		"Name=ws-1",
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("body missing %q; got %q", want, body)
-		}
-	}
+	assertWire(t, "body", string(rec.requests[0].Body), "Name=ws-1&Track=both_tracks&Url=wss%3A%2F%2Fexample.com%2Fws")
 }
 
 // 7. Error mapping: 401 → ErrAuthentication.
@@ -436,7 +421,7 @@ func TestErrorMapping501(t *testing.T) {
 	}, nil)
 	defer cleanup()
 
-	err := c.Calls.SendUserDefinedMessage(context.Background(), sid, map[string]any{"hello": "world"})
+	err := c.Calls.SendUserDefinedMessage(context.Background(), sid)
 	if !errors.Is(err, voiceml.ErrNotImplemented) {
 		t.Fatalf("want ErrNotImplemented, got %v", err)
 	}
@@ -461,12 +446,11 @@ func TestErrorMapping409(t *testing.T) {
 	if apiErr.StatusCode != 409 {
 		t.Fatalf("StatusCode: want 409, got %d", apiErr.StatusCode)
 	}
-	codeInt, ok := apiErr.Code.(int64)
-	if !ok {
-		t.Fatalf("Code: want int64, got %T (%v)", apiErr.Code, apiErr.Code)
+	if apiErr.Code != 20409 {
+		t.Fatalf("Code: want 20409, got %d", apiErr.Code)
 	}
-	if codeInt != 20409 {
-		t.Fatalf("Code: want 20409, got %d", codeInt)
+	if apiErr.Status != 409 {
+		t.Fatalf("Status: want 409, got %d", apiErr.Status)
 	}
 	if !errors.Is(err, voiceml.ErrConflict) {
 		t.Fatal("err should wrap ErrConflict")
@@ -556,12 +540,7 @@ func TestQueuesCreate(t *testing.T) {
 	if q.Sid != quSid {
 		t.Fatalf("sid: want %q, got %q", quSid, q.Sid)
 	}
-	body := string(rec.requests[0].Body)
-	for _, want := range []string{"FriendlyName=support", "MaxSize=200"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("body missing %q; got %q", want, body)
-		}
-	}
+	assertWire(t, "body", string(rec.requests[0].Body), "FriendlyName=support&MaxSize=200")
 }
 
 // 15. Conferences.End — defaults to Status=completed when nil is passed.
@@ -586,16 +565,13 @@ func TestConferencesEndDefault(t *testing.T) {
 	if conf.Status != "completed" {
 		t.Fatalf("status: want completed, got %q", conf.Status)
 	}
-	body := string(rec.requests[0].Body)
-	if !strings.Contains(body, "Status=completed") {
-		t.Errorf("body missing Status=completed; got %q", body)
-	}
+	assertWire(t, "body", string(rec.requests[0].Body), "Status=completed")
 }
 
 // 16. Diagnostics.Health — unauthenticated GET /health.
 func TestDiagnosticsHealth(t *testing.T) {
 	c, rec, cleanup := newClient(t, []handlerStep{
-		jsonStep(200, map[string]any{"ok": true, "warnings": []any{}, "failures": []any{}}),
+		jsonStep(200, map[string]any{"ok": true}),
 	}, nil)
 	defer cleanup()
 
@@ -664,7 +640,7 @@ func TestIncomingPhoneNumbersList(t *testing.T) {
 				map[string]any{
 					"sid":          pnSid,
 					"account_sid":  testAccountSid,
-					"phone_number": "+18005551234",
+					"phone_number": "+14155550100",
 					"api_version":  "2010-04-01",
 					"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
 						testAccountSid, pnSid),
@@ -675,7 +651,6 @@ func TestIncomingPhoneNumbersList(t *testing.T) {
 			},
 			"page":           0,
 			"page_size":      50,
-			"total":          1,
 			"first_page_uri": "/IncomingPhoneNumbers?Page=0&PageSize=50",
 			"next_page_uri":  "",
 			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers.json",
@@ -688,7 +663,7 @@ func TestIncomingPhoneNumbersList(t *testing.T) {
 	pageSize := 50
 	list, err := c.IncomingPhoneNumbers.List(context.Background(),
 		&voiceml.ListIncomingPhoneNumbersParams{
-			PhoneNumber: "+18005551234",
+			PhoneNumber: "+14155550100",
 			Page:        &page,
 			PageSize:    &pageSize,
 		})
@@ -702,14 +677,14 @@ func TestIncomingPhoneNumbersList(t *testing.T) {
 	if !strings.HasPrefix(pn.Sid, "PN") {
 		t.Fatalf("expected PN-prefixed sid, got %q", pn.Sid)
 	}
-	if pn.PhoneNumber != "+18005551234" {
-		t.Fatalf("phone_number: want +18005551234, got %q", pn.PhoneNumber)
+	if pn.PhoneNumber != "+14155550100" {
+		t.Fatalf("phone_number: want +14155550100, got %q", pn.PhoneNumber)
 	}
 	if !pn.Capabilities.Voice {
 		t.Fatal("capabilities.voice: want true")
 	}
-	if list.PageSize != 50 || list.Page != 0 {
-		t.Fatalf("pagination: want page=0 size=50, got page=%d size=%d", list.Page, list.PageSize)
+	if list.PageSize != 50 || list.Page.Page != 0 {
+		t.Fatalf("pagination: want page=0 size=50, got page=%d size=%d", list.Page.Page, list.PageSize)
 	}
 	if list.FirstPageURI == "" {
 		t.Fatal("first_page_uri missing from list envelope")
@@ -721,15 +696,7 @@ func TestIncomingPhoneNumbersList(t *testing.T) {
 	if req.Path != wantPath {
 		t.Fatalf("path: want %q, got %q", wantPath, req.Path)
 	}
-	for _, want := range []string{
-		"PhoneNumber=%2B18005551234",
-		"Page=0",
-		"PageSize=50",
-	} {
-		if !strings.Contains(req.Query, want) {
-			t.Errorf("query missing %q; got %q", want, req.Query)
-		}
-	}
+	assertWire(t, "query", req.Query, "Page=0&PageSize=50&PhoneNumber=%2B14155550100")
 }
 
 // 20. IncomingPhoneNumbers.Create — required PhoneNumber on the wire,
@@ -740,7 +707,7 @@ func TestIncomingPhoneNumbersCreate(t *testing.T) {
 		jsonStep(201, map[string]any{
 			"sid":          pnSid,
 			"account_sid":  testAccountSid,
-			"phone_number": "+18005550000",
+			"phone_number": "+14155550101",
 			"api_version":  "2010-04-01",
 			"voice_url":    "https://example.com/twiml",
 			"voice_method": "POST",
@@ -755,7 +722,7 @@ func TestIncomingPhoneNumbersCreate(t *testing.T) {
 
 	pn, err := c.IncomingPhoneNumbers.Create(context.Background(),
 		voiceml.CreateIncomingPhoneNumberParams{
-			PhoneNumber: "+18005550000",
+			PhoneNumber: "+14155550101",
 			VoiceURL:    voiceml.String("https://example.com/twiml"),
 			VoiceMethod: voiceml.String("POST"),
 		})
@@ -778,16 +745,7 @@ func TestIncomingPhoneNumbersCreate(t *testing.T) {
 	if req.Method != "POST" {
 		t.Fatalf("method: want POST, got %s", req.Method)
 	}
-	body := string(req.Body)
-	for _, want := range []string{
-		"PhoneNumber=%2B18005550000",
-		"VoiceUrl=https%3A%2F%2Fexample.com%2Ftwiml",
-		"VoiceMethod=POST",
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("body missing %q; got %q", want, body)
-		}
-	}
+	assertWire(t, "body", string(req.Body), "PhoneNumber=%2B14155550101&VoiceMethod=POST&VoiceUrl=https%3A%2F%2Fexample.com%2Ftwiml")
 }
 
 // 21. IncomingPhoneNumbers.Get — single-row fetch, request path includes
@@ -798,7 +756,7 @@ func TestIncomingPhoneNumbersGet(t *testing.T) {
 		jsonStep(200, map[string]any{
 			"sid":          pnSid,
 			"account_sid":  testAccountSid,
-			"phone_number": "+18005550001",
+			"phone_number": "+14155550104",
 			"api_version":  "2010-04-01",
 			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
 				testAccountSid, pnSid),
@@ -830,7 +788,7 @@ func TestIncomingPhoneNumbersUpdate(t *testing.T) {
 		jsonStep(200, map[string]any{
 			"sid":          pnSid,
 			"account_sid":  testAccountSid,
-			"phone_number": "+18005550002",
+			"phone_number": "+14155550105",
 			"api_version":  "2010-04-01",
 			"voice_url":    "https://example.com/new",
 			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
@@ -852,14 +810,8 @@ func TestIncomingPhoneNumbersUpdate(t *testing.T) {
 	if pn.VoiceURL == nil || *pn.VoiceURL != "https://example.com/new" {
 		t.Fatalf("voice_url didn't round-trip: %+v", pn.VoiceURL)
 	}
-	body := string(rec.requests[0].Body)
-	if !strings.Contains(body, "VoiceUrl=https%3A%2F%2Fexample.com%2Fnew") {
-		t.Errorf("body missing VoiceUrl; got %q", body)
-	}
-	// VoiceMethod was not set on the request — must not appear on the wire.
-	if strings.Contains(body, "VoiceMethod=") {
-		t.Errorf("body should not contain VoiceMethod (unset); got %q", body)
-	}
+	// Only the field that was set reaches the wire.
+	assertWire(t, "body", string(rec.requests[0].Body), "VoiceUrl=https%3A%2F%2Fexample.com%2Fnew")
 }
 
 // 23. IncomingPhoneNumbers.Delete — 204 No Content, returns nil.
@@ -946,7 +898,7 @@ func TestIncomingPhoneNumberTypeField(t *testing.T) {
 		jsonStep(200, map[string]any{
 			"sid":          pnSid,
 			"account_sid":  testAccountSid,
-			"phone_number": "+18005550003",
+			"phone_number": "+14155550106",
 			"api_version":  "2010-04-01",
 			"uri": fmt.Sprintf("/2010-04-01/Accounts/%s/IncomingPhoneNumbers/%s.json",
 				testAccountSid, pnSid),
@@ -1059,19 +1011,8 @@ func TestCallsListStartTimeEndTimeFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Calls.List: %v", err)
 	}
-	q := rec.requests[0].Query
-	for _, want := range []string{
-		"StartTime=2026-05-01",
-		"StartTime%3C=2026-05-02",
-		"StartTime%3E=2026-04-30",
-		"EndTime=2026-05-21",
-		"EndTime%3C=2026-05-22",
-		"EndTime%3E=2026-05-20",
-	} {
-		if !strings.Contains(q, want) {
-			t.Fatalf("query %q missing %q", q, want)
-		}
-	}
+	assertWire(t, "query", rec.requests[0].Query,
+		"EndTime=2026-05-21&EndTime%3C=2026-05-22&EndTime%3E=2026-05-20&StartTime=2026-05-01&StartTime%3C=2026-05-02&StartTime%3E=2026-04-30")
 }
 
 // 30. Recordings.List sends DateCreated filters (spec v0.6.3).
@@ -1091,17 +1032,8 @@ func TestRecordingsListDateCreatedFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Recordings.List: %v", err)
 	}
-	q := rec.requests[0].Query
-	for _, want := range []string{
-		"DateCreated=2026-05-01",
-		"DateCreated%3C=2026-05-02",
-		"DateCreated%3E=2026-04-30",
-		"CallSid=" + callSid,
-	} {
-		if !strings.Contains(q, want) {
-			t.Fatalf("query %q missing %q", q, want)
-		}
-	}
+	assertWire(t, "query", rec.requests[0].Query,
+		"CallSid="+callSid+"&DateCreated=2026-05-01&DateCreated%3C=2026-05-02&DateCreated%3E=2026-04-30")
 }
 
 // 31. Queues.Create accepts MaxSize=0 (unlimited, spec v0.6.3).
@@ -1129,10 +1061,7 @@ func TestQueuesCreateMaxSizeZero(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Queues.Create: %v", err)
 	}
-	body := string(rec.requests[0].Body)
-	if !strings.Contains(body, "MaxSize=0") {
-		t.Fatalf("body: want MaxSize=0, got %q", body)
-	}
+	assertWire(t, "body", string(rec.requests[0].Body), "FriendlyName=unlimited&MaxSize=0")
 }
 
 // 32. Calls.List sends PageToken (spec v0.6.4).
@@ -1148,9 +1077,7 @@ func TestCallsListPageToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Calls.List: %v", err)
 	}
-	if !strings.Contains(rec.requests[0].Query, "PageToken=cursor-abc123") {
-		t.Fatalf("query: want PageToken, got %q", rec.requests[0].Query)
-	}
+	assertWire(t, "query", rec.requests[0].Query, "PageToken=cursor-abc123")
 }
 
 // 33. Conferences.CreateParticipant sends From/To (spec v0.6.6).
@@ -1169,18 +1096,13 @@ func TestConferencesCreateParticipant(t *testing.T) {
 	defer cleanup()
 
 	_, err := c.Conferences.CreateParticipant(context.Background(), confSid, voiceml.CreateParticipantParams{
-		From: "+18005550000",
-		To:   "+18005551234",
+		From: "+14155550101",
+		To:   "+14155550100",
 	})
 	if err != nil {
 		t.Fatalf("Conferences.CreateParticipant: %v", err)
 	}
-	body := string(rec.requests[0].Body)
-	for _, want := range []string{"From=%2B18005550000", "To=%2B18005551234"} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("body %q missing %q", body, want)
-		}
-	}
+	assertWire(t, "body", string(rec.requests[0].Body), "From=%2B14155550101&To=%2B14155550100")
 }
 
 // 34. Calls.ListNotifications sends Log and MessageDate filters (spec v0.6.6).
@@ -1191,7 +1113,7 @@ func TestCallsListNotificationsFilters(t *testing.T) {
 			"notifications": []any{},
 			"page":          0,
 			"page_size":     50,
-			"total":         0,
+			"uri":           "/Notifications",
 		}),
 	}, nil)
 	defer cleanup()
@@ -1206,17 +1128,8 @@ func TestCallsListNotificationsFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Calls.ListNotifications: %v", err)
 	}
-	q := rec.requests[0].Query
-	for _, want := range []string{
-		"Log=1",
-		"MessageDate=2026-05-01",
-		"MessageDate%3C=2026-05-02",
-		"MessageDate%3E=2026-04-30",
-	} {
-		if !strings.Contains(q, want) {
-			t.Fatalf("query %q missing %q", q, want)
-		}
-	}
+	assertWire(t, "query", rec.requests[0].Query,
+		"Log=1&MessageDate=2026-05-01&MessageDate%3C=2026-05-02&MessageDate%3E=2026-04-30")
 }
 
 // 35. Recordings.List sends IncludeSoftDeleted (spec v0.6.6).
@@ -1233,259 +1146,10 @@ func TestRecordingsListIncludeSoftDeleted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Recordings.List: %v", err)
 	}
-	if !strings.Contains(rec.requests[0].Query, "IncludeSoftDeleted=true") {
-		t.Fatalf("query: want IncludeSoftDeleted, got %q", rec.requests[0].Query)
-	}
+	assertWire(t, "query", rec.requests[0].Query, "IncludeSoftDeleted=true")
 }
 
-// --- Iterate (pagination) tests ---
-
-// 36. Calls.Iterate — two pages (2 + 1 calls), asserts 3 total and Page=0 / Page=1.
-func TestIterateCallsTwoPages(t *testing.T) {
-	callsBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Calls.json", testAccountSid)
-
-	c, rec, cleanup := newClient(t, []handlerStep{
-		jsonStep(200, map[string]any{
-			"calls": []any{
-				callPayload("CA" + strings.Repeat("1", 32)),
-				callPayload("CA" + strings.Repeat("2", 32)),
-			},
-			"page":          0,
-			"page_size":     50,
-			"next_page_uri": callsBasePath + "?Page=1",
-			"uri":           callsBasePath + "?Page=0",
-		}),
-		jsonStep(200, map[string]any{
-			"calls": []any{
-				callPayload("CA" + strings.Repeat("3", 32)),
-			},
-			"page":          1,
-			"page_size":     50,
-			"next_page_uri": "",
-			"uri":           callsBasePath + "?Page=1",
-		}),
-	}, nil)
-	defer cleanup()
-
-	calls, err := c.Calls.Iterate(context.Background(), voiceml.ListCallsParams{})
-	if err != nil {
-		t.Fatalf("Calls.Iterate: %v", err)
-	}
-	if len(calls) != 3 {
-		t.Fatalf("len(calls): want 3, got %d", len(calls))
-	}
-	if len(rec.requests) != 2 {
-		t.Fatalf("requests: want 2, got %d", len(rec.requests))
-	}
-	if !strings.Contains(rec.requests[0].Query, "Page=0") {
-		t.Fatalf("request 0 query: want Page=0, got %q", rec.requests[0].Query)
-	}
-	if !strings.Contains(rec.requests[1].Query, "Page=1") {
-		t.Fatalf("request 1 query: want Page=1, got %q", rec.requests[1].Query)
-	}
-}
-
-// 37. Conferences.Iterate — two pages (2 + 1 conferences), asserts 3 total.
-func TestIterateConferencesTwoPages(t *testing.T) {
-	confBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Conferences.json", testAccountSid)
-
-	confPayload := func(sid string) map[string]any {
-		return map[string]any{
-			"sid":           sid,
-			"account_sid":   testAccountSid,
-			"friendly_name": "room-" + sid[:6],
-			"status":        "in-progress",
-			"api_version":   "2010-04-01",
-			"uri":           fmt.Sprintf("/2010-04-01/Accounts/%s/Conferences/%s.json", testAccountSid, sid),
-		}
-	}
-
-	c, rec, cleanup := newClient(t, []handlerStep{
-		jsonStep(200, map[string]any{
-			"conferences": []any{
-				confPayload("CF" + strings.Repeat("1", 32)),
-				confPayload("CF" + strings.Repeat("2", 32)),
-			},
-			"page":          0,
-			"page_size":     50,
-			"next_page_uri": confBasePath + "?Page=1",
-			"uri":           confBasePath + "?Page=0",
-		}),
-		jsonStep(200, map[string]any{
-			"conferences": []any{
-				confPayload("CF" + strings.Repeat("3", 32)),
-			},
-			"page":          1,
-			"page_size":     50,
-			"next_page_uri": "",
-			"uri":           confBasePath + "?Page=1",
-		}),
-	}, nil)
-	defer cleanup()
-
-	confs, err := c.Conferences.Iterate(context.Background(), voiceml.ListConferencesParams{})
-	if err != nil {
-		t.Fatalf("Conferences.Iterate: %v", err)
-	}
-	if len(confs) != 3 {
-		t.Fatalf("len(confs): want 3, got %d", len(confs))
-	}
-	if len(rec.requests) != 2 {
-		t.Fatalf("requests: want 2, got %d", len(rec.requests))
-	}
-	if !strings.Contains(rec.requests[0].Query, "Page=0") {
-		t.Fatalf("request 0 query: want Page=0, got %q", rec.requests[0].Query)
-	}
-	if !strings.Contains(rec.requests[1].Query, "Page=1") {
-		t.Fatalf("request 1 query: want Page=1, got %q", rec.requests[1].Query)
-	}
-}
-
-// 38. Recordings.Iterate — two pages (2 + 1 recordings). RecordingList has its
-// own fields (does not embed Page), so next_page_uri is at the top level.
-func TestIterateRecordingsTwoPages(t *testing.T) {
-	recsBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Recordings.json", testAccountSid)
-
-	recPayload := func(sid string) map[string]any {
-		return map[string]any{
-			"sid":         sid,
-			"account_sid": testAccountSid,
-			"call_sid":    "CA" + strings.Repeat("0", 32),
-			"status":      "completed",
-			"api_version": "2010-04-01",
-			"uri":         fmt.Sprintf("/2010-04-01/Accounts/%s/Recordings/%s.json", testAccountSid, sid),
-		}
-	}
-
-	c, rec, cleanup := newClient(t, []handlerStep{
-		jsonStep(200, map[string]any{
-			"recordings": []any{
-				recPayload("RE" + strings.Repeat("1", 32)),
-				recPayload("RE" + strings.Repeat("2", 32)),
-			},
-			"page":          0,
-			"page_size":     50,
-			"next_page_uri": recsBasePath + "?Page=1",
-			"uri":           recsBasePath + "?Page=0",
-		}),
-		jsonStep(200, map[string]any{
-			"recordings": []any{
-				recPayload("RE" + strings.Repeat("3", 32)),
-			},
-			"page":          1,
-			"page_size":     50,
-			"next_page_uri": "",
-			"uri":           recsBasePath + "?Page=1",
-		}),
-	}, nil)
-	defer cleanup()
-
-	recs, err := c.Recordings.Iterate(context.Background(), voiceml.ListRecordingsParams{})
-	if err != nil {
-		t.Fatalf("Recordings.Iterate: %v", err)
-	}
-	if len(recs) != 3 {
-		t.Fatalf("len(recs): want 3, got %d", len(recs))
-	}
-	if len(rec.requests) != 2 {
-		t.Fatalf("requests: want 2, got %d", len(rec.requests))
-	}
-	if !strings.Contains(rec.requests[0].Query, "Page=0") {
-		t.Fatalf("request 0 query: want Page=0, got %q", rec.requests[0].Query)
-	}
-	if !strings.Contains(rec.requests[1].Query, "Page=1") {
-		t.Fatalf("request 1 query: want Page=1, got %q", rec.requests[1].Query)
-	}
-}
-
-// 39. Queues.Iterate — two pages (2 + 1 queues), asserts 3 total.
-func TestIterateQueuesTwoPages(t *testing.T) {
-	queuesBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Queues.json", testAccountSid)
-
-	queuePayload := func(sid string) map[string]any {
-		return map[string]any{
-			"sid":               sid,
-			"account_sid":       testAccountSid,
-			"friendly_name":     "q-" + sid[:6],
-			"current_size":      0,
-			"max_size":          100,
-			"average_wait_time": 0,
-			"date_created":      "Mon, 19 May 2026 12:00:00 +0000",
-			"date_updated":      "Mon, 19 May 2026 12:00:00 +0000",
-			"uri":               fmt.Sprintf("/2010-04-01/Accounts/%s/Queues/%s.json", testAccountSid, sid),
-		}
-	}
-
-	c, rec, cleanup := newClient(t, []handlerStep{
-		jsonStep(200, map[string]any{
-			"queues": []any{
-				queuePayload("QU" + strings.Repeat("1", 32)),
-				queuePayload("QU" + strings.Repeat("2", 32)),
-			},
-			"page":          0,
-			"page_size":     50,
-			"next_page_uri": queuesBasePath + "?Page=1",
-			"uri":           queuesBasePath + "?Page=0",
-		}),
-		jsonStep(200, map[string]any{
-			"queues": []any{
-				queuePayload("QU" + strings.Repeat("3", 32)),
-			},
-			"page":          1,
-			"page_size":     50,
-			"next_page_uri": "",
-			"uri":           queuesBasePath + "?Page=1",
-		}),
-	}, nil)
-	defer cleanup()
-
-	queues, err := c.Queues.Iterate(context.Background(), voiceml.ListPageParams{})
-	if err != nil {
-		t.Fatalf("Queues.Iterate: %v", err)
-	}
-	if len(queues) != 3 {
-		t.Fatalf("len(queues): want 3, got %d", len(queues))
-	}
-	if len(rec.requests) != 2 {
-		t.Fatalf("requests: want 2, got %d", len(rec.requests))
-	}
-	if !strings.Contains(rec.requests[0].Query, "Page=0") {
-		t.Fatalf("request 0 query: want Page=0, got %q", rec.requests[0].Query)
-	}
-	if !strings.Contains(rec.requests[1].Query, "Page=1") {
-		t.Fatalf("request 1 query: want Page=1, got %q", rec.requests[1].Query)
-	}
-}
-
-// 40. Calls.Iterate — single page (empty NextPageURI), asserts only 1 request made.
-func TestIterateCallsSinglePage(t *testing.T) {
-	callsBasePath := fmt.Sprintf("/2010-04-01/Accounts/%s/Calls.json", testAccountSid)
-
-	c, rec, cleanup := newClient(t, []handlerStep{
-		jsonStep(200, map[string]any{
-			"calls": []any{
-				callPayload("CA" + strings.Repeat("a", 32)),
-				callPayload("CA" + strings.Repeat("b", 32)),
-			},
-			"page":          0,
-			"page_size":     50,
-			"next_page_uri": "",
-			"uri":           callsBasePath + "?Page=0",
-		}),
-	}, nil)
-	defer cleanup()
-
-	calls, err := c.Calls.Iterate(context.Background(), voiceml.ListCallsParams{})
-	if err != nil {
-		t.Fatalf("Calls.Iterate: %v", err)
-	}
-	if len(calls) != 2 {
-		t.Fatalf("len(calls): want 2, got %d", len(calls))
-	}
-	if len(rec.requests) != 1 {
-		t.Fatalf("requests: want 1 (single page), got %d", len(rec.requests))
-	}
-}
+// --- Iterate (pagination) tests: see pagination_test.go ---
 
 func messagePayload(sid string) map[string]any {
 	if sid == "" {
@@ -1495,8 +1159,8 @@ func messagePayload(sid string) map[string]any {
 		"sid":          sid,
 		"account_sid":  testAccountSid,
 		"api_version":  "2010-04-01",
-		"to":           "+18005551234",
-		"from":         "+18005550000",
+		"to":           "+14155550100",
+		"from":         "+14155550101",
 		"body":         "hello world",
 		"status":       "sent",
 		"num_segments": "1",
@@ -1517,9 +1181,9 @@ func TestMessagesCreate(t *testing.T) {
 	defer cleanup()
 
 	msg, err := c.Messages.Create(context.Background(), voiceml.CreateMessageParams{
-		To:   "+18005551234",
-		Body: "hello world",
-		From: voiceml.String("+18005550000"),
+		To:   "+14155550100",
+		Body: voiceml.String("hello world"),
+		From: voiceml.String("+14155550101"),
 	})
 	if err != nil {
 		t.Fatalf("Messages.Create: %v", err)
@@ -1536,12 +1200,7 @@ func TestMessagesCreate(t *testing.T) {
 	if req.Method != "POST" {
 		t.Fatalf("method: want POST, got %s", req.Method)
 	}
-	body := string(req.Body)
-	for _, want := range []string{"To=%2B18005551234", "Body=hello+world", "From=%2B18005550000"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("body missing %q; got %q", want, body)
-		}
-	}
+	assertWire(t, "body", string(req.Body), "Body=hello+world&From=%2B14155550101&To=%2B14155550100")
 }
 
 // 42. Messages.Update — Body redaction sent as form field.
@@ -1558,10 +1217,7 @@ func TestMessagesUpdateRedact(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Messages.Update: %v", err)
 	}
-	body := string(rec.requests[0].Body)
-	if !strings.Contains(body, "Body=") {
-		t.Errorf("body missing Body= (redaction); got %q", body)
-	}
+	assertWire(t, "body", string(rec.requests[0].Body), "Body=")
 }
 
 // 43. Messages.List — accepts DateSent</> filters and PageToken pagination.
@@ -1571,26 +1227,19 @@ func TestMessagesListFilters(t *testing.T) {
 			"messages":  []any{messagePayload("")},
 			"page":      0,
 			"page_size": 50,
-			"total":     1,
 			"uri":       "/Messages",
 		}),
 	}, nil)
 	defer cleanup()
 
 	_, err := c.Messages.List(context.Background(), voiceml.ListMessagesParams{
-		To:           voiceml.String("+18005551234"),
+		To:           voiceml.String("+14155550100"),
 		DateSentMore: voiceml.String("2026-01-01"),
 	})
 	if err != nil {
 		t.Fatalf("Messages.List: %v", err)
 	}
-	q := rec.requests[0].Query
-	if !strings.Contains(q, "To=%2B18005551234") {
-		t.Errorf("query missing To; got %q", q)
-	}
-	if !strings.Contains(q, "DateSent%3E=2026-01-01") {
-		t.Errorf("query missing DateSent>; got %q", q)
-	}
+	assertWire(t, "query", rec.requests[0].Query, "DateSent%3E=2026-01-01&To=%2B14155550100")
 }
 
 func callPaymentPayload(sid string) map[string]any {
@@ -1644,21 +1293,8 @@ func TestCallsStartPayment(t *testing.T) {
 	if req.Method != "POST" {
 		t.Fatalf("method: want POST, got %s", req.Method)
 	}
-	body := string(req.Body)
-	for _, want := range []string{
-		"IdempotencyKey=idem-1",
-		"ChargeAmount=19.99",
-		"Currency=USD",
-		"Description=ticket",
-		"PaymentMethod=credit-card",
-		"TokenType=one-time",
-		"PostalCode=false",
-		"SecurityCode=true",
-	} {
-		if !strings.Contains(body, want) {
-			t.Errorf("body missing %q; got %q", want, body)
-		}
-	}
+	assertWire(t, "body", string(req.Body),
+		"ChargeAmount=19.99&Currency=USD&Description=ticket&IdempotencyKey=idem-1&PaymentMethod=credit-card&PostalCode=false&SecurityCode=true&TokenType=one-time")
 }
 
 // 45. Calls.UpdatePayment — Status=complete and Capture=... wire encoding.
@@ -1695,10 +1331,6 @@ func TestCallsUpdatePayment(t *testing.T) {
 			t.Fatalf("req %d method: want POST, got %s", i, r.Method)
 		}
 	}
-	if !strings.Contains(string(rec.requests[0].Body), "Status=complete") {
-		t.Errorf("first request body missing Status=complete; got %q", rec.requests[0].Body)
-	}
-	if !strings.Contains(string(rec.requests[1].Body), "Capture=security-code") {
-		t.Errorf("second request body missing Capture=security-code; got %q", rec.requests[1].Body)
-	}
+	assertWire(t, "first body", string(rec.requests[0].Body), "Status=complete")
+	assertWire(t, "second body", string(rec.requests[1].Body), "Capture=security-code")
 }

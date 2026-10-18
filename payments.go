@@ -6,9 +6,8 @@ import (
 )
 
 // CallPayment is the REST companion to the `<Pay>` TwiML verb. The response
-// shape mirrors Twilio's deliberately-minimal payload — runtime config
-// (ChargeAmount, PaymentConnector, ValidCardTypes, etc.) is captured
-// server-side and not echoed back. Tenant-side BYO is binding: the account
+// is deliberately minimal — runtime config (ChargeAmount, PaymentConnector,
+// ValidCardTypes, etc.) is captured server-side and not echoed back. Tenant-side BYO is binding: the account
 // must have `pay_enabled = true` AND a `stripe_secret_key` set, or the call
 // fails 403.
 type CallPayment struct {

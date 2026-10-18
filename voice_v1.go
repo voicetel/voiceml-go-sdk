@@ -1,4 +1,4 @@
-// Voice v1 (voice.twilio.com/v1) resources: ByocTrunks, ConnectionPolicies
+// Twilio-compatible Voice v1 resources: ByocTrunks, ConnectionPolicies
 // + Targets, DialingPermissions Settings, SourceIpMappings, IpRecords.
 //
 // The /v1 namespace omits the /Accounts/{AccountSid} segment — the account is
@@ -14,21 +14,10 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// Shared meta envelope for /v1 list responses (Voice v1 + Conversations v1).
+// Shared list-query knobs for /v1 list endpoints (Voice v1, Conversations v1,
+// Messaging v1, Pricing). The `meta` envelope (VoiceV1Meta) lives in
+// pagination.go.
 // ---------------------------------------------------------------------------
-
-// VoiceV1Meta is the pagination envelope embedded in every /v1 list response.
-// Twilio's voice.twilio.com / conversations.twilio.com surfaces both ship it
-// under the `meta` key.
-type VoiceV1Meta struct {
-	FirstPageURL    *string `json:"first_page_url,omitempty"`
-	NextPageURL     *string `json:"next_page_url,omitempty"`
-	PreviousPageURL *string `json:"previous_page_url,omitempty"`
-	URL             *string `json:"url,omitempty"`
-	Page            *int    `json:"page,omitempty"`
-	PageSize        *int    `json:"page_size,omitempty"`
-	Key             *string `json:"key,omitempty"`
-}
 
 // V1PageParams are the shared list-query knobs the /v1 surface accepts. The
 // Twilio paginator key is `PageSize`.
@@ -316,7 +305,7 @@ func (p UpdateVoiceV1SettingsParams) form() url.Values {
 // Service — flat-method facade for the entire Voice v1 surface.
 // ---------------------------------------------------------------------------
 
-// VoiceV1Service exposes the voice.twilio.com/v1 endpoints. Reach it as
+// VoiceV1Service exposes the Voice /v1 endpoints. Reach it as
 // c.VoiceV1. Methods are named verb+resource (Twilio-style) so the surface
 // stays flat for IDE discovery.
 type VoiceV1Service struct{ c *Client }
@@ -327,7 +316,7 @@ type VoiceV1Service struct{ c *Client }
 func (s *VoiceV1Service) CreateIpRecord(ctx context.Context, params CreateVoiceV1IpRecordParams) (*VoiceV1IpRecord, error) {
 	var out VoiceV1IpRecord
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/IpRecords", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "IpRecords"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -338,7 +327,7 @@ func (s *VoiceV1Service) CreateIpRecord(ctx context.Context, params CreateVoiceV
 func (s *VoiceV1Service) ListIpRecords(ctx context.Context, params V1PageParams) (*VoiceV1IpRecordList, error) {
 	var out VoiceV1IpRecordList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/IpRecords", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "IpRecords"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -349,7 +338,7 @@ func (s *VoiceV1Service) ListIpRecords(ctx context.Context, params V1PageParams)
 func (s *VoiceV1Service) FetchIpRecord(ctx context.Context, sid string) (*VoiceV1IpRecord, error) {
 	var out VoiceV1IpRecord
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/IpRecords/" + sid,
+		method: "GET", path: apiRoute("/v1", "IpRecords", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -360,7 +349,7 @@ func (s *VoiceV1Service) FetchIpRecord(ctx context.Context, sid string) (*VoiceV
 func (s *VoiceV1Service) UpdateIpRecord(ctx context.Context, sid string, params UpdateVoiceV1IpRecordParams) (*VoiceV1IpRecord, error) {
 	var out VoiceV1IpRecord
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/IpRecords/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "IpRecords", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -370,7 +359,7 @@ func (s *VoiceV1Service) UpdateIpRecord(ctx context.Context, sid string, params 
 // DeleteIpRecord removes an IpRecord.
 func (s *VoiceV1Service) DeleteIpRecord(ctx context.Context, sid string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/IpRecords/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "IpRecords", sid),
 	}, nil)
 }
 
@@ -380,7 +369,7 @@ func (s *VoiceV1Service) DeleteIpRecord(ctx context.Context, sid string) error {
 func (s *VoiceV1Service) CreateSourceIpMapping(ctx context.Context, params CreateVoiceV1SourceIpMappingParams) (*VoiceV1SourceIpMapping, error) {
 	var out VoiceV1SourceIpMapping
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/SourceIpMappings", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "SourceIpMappings"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -391,7 +380,7 @@ func (s *VoiceV1Service) CreateSourceIpMapping(ctx context.Context, params Creat
 func (s *VoiceV1Service) ListSourceIpMappings(ctx context.Context, params V1PageParams) (*VoiceV1SourceIpMappingList, error) {
 	var out VoiceV1SourceIpMappingList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/SourceIpMappings", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "SourceIpMappings"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -402,7 +391,7 @@ func (s *VoiceV1Service) ListSourceIpMappings(ctx context.Context, params V1Page
 func (s *VoiceV1Service) FetchSourceIpMapping(ctx context.Context, sid string) (*VoiceV1SourceIpMapping, error) {
 	var out VoiceV1SourceIpMapping
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/SourceIpMappings/" + sid,
+		method: "GET", path: apiRoute("/v1", "SourceIpMappings", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -413,7 +402,7 @@ func (s *VoiceV1Service) FetchSourceIpMapping(ctx context.Context, sid string) (
 func (s *VoiceV1Service) UpdateSourceIpMapping(ctx context.Context, sid string, params UpdateVoiceV1SourceIpMappingParams) (*VoiceV1SourceIpMapping, error) {
 	var out VoiceV1SourceIpMapping
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/SourceIpMappings/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "SourceIpMappings", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -423,7 +412,7 @@ func (s *VoiceV1Service) UpdateSourceIpMapping(ctx context.Context, sid string, 
 // DeleteSourceIpMapping removes a SourceIpMapping.
 func (s *VoiceV1Service) DeleteSourceIpMapping(ctx context.Context, sid string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/SourceIpMappings/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "SourceIpMappings", sid),
 	}, nil)
 }
 
@@ -433,7 +422,7 @@ func (s *VoiceV1Service) DeleteSourceIpMapping(ctx context.Context, sid string) 
 func (s *VoiceV1Service) CreateByocTrunk(ctx context.Context, params CreateVoiceV1ByocTrunkParams) (*VoiceV1ByocTrunk, error) {
 	var out VoiceV1ByocTrunk
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/ByocTrunks", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "ByocTrunks"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -444,7 +433,7 @@ func (s *VoiceV1Service) CreateByocTrunk(ctx context.Context, params CreateVoice
 func (s *VoiceV1Service) ListByocTrunks(ctx context.Context, params V1PageParams) (*VoiceV1ByocTrunkList, error) {
 	var out VoiceV1ByocTrunkList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/ByocTrunks", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "ByocTrunks"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -455,7 +444,7 @@ func (s *VoiceV1Service) ListByocTrunks(ctx context.Context, params V1PageParams
 func (s *VoiceV1Service) FetchByocTrunk(ctx context.Context, sid string) (*VoiceV1ByocTrunk, error) {
 	var out VoiceV1ByocTrunk
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/ByocTrunks/" + sid,
+		method: "GET", path: apiRoute("/v1", "ByocTrunks", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -466,7 +455,7 @@ func (s *VoiceV1Service) FetchByocTrunk(ctx context.Context, sid string) (*Voice
 func (s *VoiceV1Service) UpdateByocTrunk(ctx context.Context, sid string, params UpdateVoiceV1ByocTrunkParams) (*VoiceV1ByocTrunk, error) {
 	var out VoiceV1ByocTrunk
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/ByocTrunks/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "ByocTrunks", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -476,7 +465,7 @@ func (s *VoiceV1Service) UpdateByocTrunk(ctx context.Context, sid string, params
 // DeleteByocTrunk removes a ByocTrunk.
 func (s *VoiceV1Service) DeleteByocTrunk(ctx context.Context, sid string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/ByocTrunks/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "ByocTrunks", sid),
 	}, nil)
 }
 
@@ -486,7 +475,7 @@ func (s *VoiceV1Service) DeleteByocTrunk(ctx context.Context, sid string) error 
 func (s *VoiceV1Service) CreateConnectionPolicy(ctx context.Context, params CreateVoiceV1ConnectionPolicyParams) (*VoiceV1ConnectionPolicy, error) {
 	var out VoiceV1ConnectionPolicy
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/ConnectionPolicies", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "ConnectionPolicies"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -497,7 +486,7 @@ func (s *VoiceV1Service) CreateConnectionPolicy(ctx context.Context, params Crea
 func (s *VoiceV1Service) ListConnectionPolicies(ctx context.Context, params V1PageParams) (*VoiceV1ConnectionPolicyList, error) {
 	var out VoiceV1ConnectionPolicyList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/ConnectionPolicies", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "ConnectionPolicies"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -508,7 +497,7 @@ func (s *VoiceV1Service) ListConnectionPolicies(ctx context.Context, params V1Pa
 func (s *VoiceV1Service) FetchConnectionPolicy(ctx context.Context, sid string) (*VoiceV1ConnectionPolicy, error) {
 	var out VoiceV1ConnectionPolicy
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/ConnectionPolicies/" + sid,
+		method: "GET", path: apiRoute("/v1", "ConnectionPolicies", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -519,7 +508,7 @@ func (s *VoiceV1Service) FetchConnectionPolicy(ctx context.Context, sid string) 
 func (s *VoiceV1Service) UpdateConnectionPolicy(ctx context.Context, sid string, params UpdateVoiceV1ConnectionPolicyParams) (*VoiceV1ConnectionPolicy, error) {
 	var out VoiceV1ConnectionPolicy
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/ConnectionPolicies/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "ConnectionPolicies", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -529,7 +518,7 @@ func (s *VoiceV1Service) UpdateConnectionPolicy(ctx context.Context, sid string,
 // DeleteConnectionPolicy removes a ConnectionPolicy.
 func (s *VoiceV1Service) DeleteConnectionPolicy(ctx context.Context, sid string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/ConnectionPolicies/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "ConnectionPolicies", sid),
 	}, nil)
 }
 
@@ -539,7 +528,7 @@ func (s *VoiceV1Service) DeleteConnectionPolicy(ctx context.Context, sid string)
 func (s *VoiceV1Service) CreateConnectionPolicyTarget(ctx context.Context, connectionPolicySid string, params CreateVoiceV1ConnectionPolicyTargetParams) (*VoiceV1ConnectionPolicyTarget, error) {
 	var out VoiceV1ConnectionPolicyTarget
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/ConnectionPolicies/" + connectionPolicySid + "/Targets", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "ConnectionPolicies", connectionPolicySid, "Targets"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -550,7 +539,7 @@ func (s *VoiceV1Service) CreateConnectionPolicyTarget(ctx context.Context, conne
 func (s *VoiceV1Service) ListConnectionPolicyTargets(ctx context.Context, connectionPolicySid string, params V1PageParams) (*VoiceV1ConnectionPolicyTargetList, error) {
 	var out VoiceV1ConnectionPolicyTargetList
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/ConnectionPolicies/" + connectionPolicySid + "/Targets", query: params.query(),
+		method: "GET", path: apiRoute("/v1", "ConnectionPolicies", connectionPolicySid, "Targets"), query: params.query(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -561,7 +550,7 @@ func (s *VoiceV1Service) ListConnectionPolicyTargets(ctx context.Context, connec
 func (s *VoiceV1Service) FetchConnectionPolicyTarget(ctx context.Context, connectionPolicySid, sid string) (*VoiceV1ConnectionPolicyTarget, error) {
 	var out VoiceV1ConnectionPolicyTarget
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/ConnectionPolicies/" + connectionPolicySid + "/Targets/" + sid,
+		method: "GET", path: apiRoute("/v1", "ConnectionPolicies", connectionPolicySid, "Targets", sid),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -572,7 +561,7 @@ func (s *VoiceV1Service) FetchConnectionPolicyTarget(ctx context.Context, connec
 func (s *VoiceV1Service) UpdateConnectionPolicyTarget(ctx context.Context, connectionPolicySid, sid string, params UpdateVoiceV1ConnectionPolicyTargetParams) (*VoiceV1ConnectionPolicyTarget, error) {
 	var out VoiceV1ConnectionPolicyTarget
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/ConnectionPolicies/" + connectionPolicySid + "/Targets/" + sid, form: params.form(),
+		method: "POST", path: apiRoute("/v1", "ConnectionPolicies", connectionPolicySid, "Targets", sid), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -582,7 +571,7 @@ func (s *VoiceV1Service) UpdateConnectionPolicyTarget(ctx context.Context, conne
 // DeleteConnectionPolicyTarget removes a Target.
 func (s *VoiceV1Service) DeleteConnectionPolicyTarget(ctx context.Context, connectionPolicySid, sid string) error {
 	return s.c.t.do(ctx, requestOpts{
-		method: "DELETE", path: "/v1/ConnectionPolicies/" + connectionPolicySid + "/Targets/" + sid,
+		method: "DELETE", path: apiRoute("/v1", "ConnectionPolicies", connectionPolicySid, "Targets", sid),
 	}, nil)
 }
 
@@ -592,7 +581,7 @@ func (s *VoiceV1Service) DeleteConnectionPolicyTarget(ctx context.Context, conne
 func (s *VoiceV1Service) FetchSettings(ctx context.Context) (*VoiceV1DialingPermissionsSettings, error) {
 	var out VoiceV1DialingPermissionsSettings
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v1/Settings",
+		method: "GET", path: apiRoute("/v1", "Settings"),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -603,7 +592,7 @@ func (s *VoiceV1Service) FetchSettings(ctx context.Context) (*VoiceV1DialingPerm
 func (s *VoiceV1Service) UpdateSettings(ctx context.Context, params UpdateVoiceV1SettingsParams) (*VoiceV1DialingPermissionsSettings, error) {
 	var out VoiceV1DialingPermissionsSettings
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v1/Settings", form: params.form(),
+		method: "POST", path: apiRoute("/v1", "Settings"), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}

@@ -27,11 +27,11 @@ type QueueList struct {
 	Queues []Queue `json:"queues"`
 }
 
-// QueueMember is one call waiting in a queue.
+// QueueMember is one call waiting in a queue. WaitTime is seconds since
+// enqueue; Position is 1-based (1 = front of the queue).
 type QueueMember struct {
 	CallSid      string `json:"call_sid"`
 	QueueSid     string `json:"queue_sid"`
-	AccountSid   string `json:"account_sid"`
 	DateEnqueued string `json:"date_enqueued"`
 	WaitTime     int    `json:"wait_time"`
 	Position     int    `json:"position"`
@@ -130,25 +130,11 @@ func (s *QueuesService) List(ctx context.Context, params ListPageParams) (*Queue
 	return &out, nil
 }
 
-// Iterate walks every page of /Queues and returns the collected slice.
-func (s *QueuesService) Iterate(ctx context.Context, params ListPageParams) ([]Queue, error) {
-	var out []Queue
-	page := 0
-	if params.Page != nil {
-		page = *params.Page
-	}
-	for {
-		params.Page = &page
-		chunk, err := s.List(ctx, params)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, chunk.Queues...)
-		if chunk.NextPageURI == "" || len(chunk.Queues) == 0 {
-			return out, nil
-		}
-		page++
-	}
+// Iterate walks every queue lazily, following each page's next_page_uri.
+// See Pager.
+func (s *QueuesService) Iterate(ctx context.Context, params ListPageParams) *Pager[Queue] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Queues"), query: params.query()},
+		func(l *QueueList) ([]Queue, PageLinks) { return l.Queues, l.Page })
 }
 
 // Get fetches a queue by SID. GET /Queues/{sid}.
@@ -201,6 +187,12 @@ func (s *QueuesService) ListMembers(ctx context.Context, queueSid string, params
 		return nil, err
 	}
 	return &out, nil
+}
+
+// IterateMembers walks every member of a queue lazily, in position order.
+func (s *QueuesService) IterateMembers(ctx context.Context, queueSid string, params ListQueueMembersParams) *Pager[QueueMember] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Queues", queueSid, "Members"), query: params.query()},
+		func(l *QueueMemberList) ([]QueueMember, PageLinks) { return l.QueueMembers, l.Page })
 }
 
 // PeekFront fetches the member at the front of the queue without dequeuing.

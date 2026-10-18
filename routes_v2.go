@@ -5,7 +5,7 @@ import (
 	"net/url"
 )
 
-// RoutesV2SipDomain is Twilio's routes/v2 Inbound Processing Region binding
+// RoutesV2SipDomain is the routes/v2 Inbound Processing Region binding
 // for a SIP domain. Keyed by domain name (not the SipDomain SID); the
 // account is resolved from HTTP Basic auth.
 type RoutesV2SipDomain struct {
@@ -33,7 +33,7 @@ func (p UpdateRoutesV2SipDomainParams) form() url.Values {
 	return v
 }
 
-// RoutesV2PhoneNumber is Twilio's routes/v2 Inbound Processing Region binding
+// RoutesV2PhoneNumber is the routes/v2 Inbound Processing Region binding
 // for a phone number (E.164 or PN sid). Account resolved from HTTP Basic auth.
 type RoutesV2PhoneNumber struct {
 	Sid          string  `json:"sid"`
@@ -70,11 +70,11 @@ type RoutesV2Service struct {
 }
 
 // FetchPhoneNumber retrieves a phone number's Inbound Processing Region binding.
-// `phoneNumber` may be E.164 (e.g. "+18005551234") or the PN sid.
+// `phoneNumber` may be E.164 (e.g. "+14155550100") or the PN sid.
 func (s *RoutesV2Service) FetchPhoneNumber(ctx context.Context, phoneNumber string) (*RoutesV2PhoneNumber, error) {
 	var out RoutesV2PhoneNumber
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v2/PhoneNumbers/" + phoneNumber,
+		method: "GET", path: apiRoute("/v2", "PhoneNumbers", phoneNumber),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (s *RoutesV2Service) FetchPhoneNumber(ctx context.Context, phoneNumber stri
 func (s *RoutesV2Service) UpdatePhoneNumber(ctx context.Context, phoneNumber string, params UpdateRoutesV2PhoneNumberParams) (*RoutesV2PhoneNumber, error) {
 	var out RoutesV2PhoneNumber
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v2/PhoneNumbers/" + phoneNumber, form: params.form(),
+		method: "POST", path: apiRoute("/v2", "PhoneNumbers", phoneNumber), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ type RoutesV2SipDomainsService struct{ c *Client }
 func (s *RoutesV2SipDomainsService) Fetch(ctx context.Context, domainName string) (*RoutesV2SipDomain, error) {
 	var out RoutesV2SipDomain
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "GET", path: "/v2/SipDomains/" + domainName,
+		method: "GET", path: apiRoute("/v2", "SipDomains", domainName),
 	}, &out); err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (s *RoutesV2SipDomainsService) Fetch(ctx context.Context, domainName string
 func (s *RoutesV2SipDomainsService) Update(ctx context.Context, domainName string, params UpdateRoutesV2SipDomainParams) (*RoutesV2SipDomain, error) {
 	var out RoutesV2SipDomain
 	if err := s.c.t.do(ctx, requestOpts{
-		method: "POST", path: "/v2/SipDomains/" + domainName, form: params.form(),
+		method: "POST", path: apiRoute("/v2", "SipDomains", domainName), form: params.form(),
 	}, &out); err != nil {
 		return nil, err
 	}

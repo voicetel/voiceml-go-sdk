@@ -5,15 +5,14 @@ import (
 	"net/url"
 )
 
-// MessagesService surfaces the /Messages REST resource — VoiceTel's
-// Twilio-compatible SMS surface, backed by the SDK 2.2 gateway.
-// Outbound-only today (no MMS, no inbound webhook delivery).
+// MessagesService surfaces the /Messages REST resource — the
+// Twilio-compatible SMS/MMS surface — plus each message's Media
+// sub-resource.
 type MessagesService struct{ c *Client }
 
-// Message mirrors Twilio's Message resource on the wire. Status pins
-// to "sent" on a successful SDK 2.2 dispatch and "failed" otherwise —
-// there is no in-flight "queued"/"sending"/"delivered" lifecycle
-// today because the gateway is fire-and-forget.
+// Message is a Twilio-compatible Message resource. Status is one of the
+// Twilio-compatible message states ("queued", "sent", "delivered",
+// "failed", ...); treat unknown values as opaque.
 type Message struct {
 	Sid                 string            `json:"sid"`
 	AccountSid          string            `json:"account_sid"`
@@ -43,35 +42,51 @@ type MessageList struct {
 	Messages []Message `json:"messages"`
 }
 
-// CreateMessageParams is the body for POST /Messages. To and Body are
-// required; From falls back to the server's SMS_FROM_NUMBER when
-// omitted.
+// CreateMessageParams is the body for POST /Messages. To is required, and
+// so is at least one of Body or MediaURL (a message with MediaURL is sent
+// as MMS). From falls back to the server's default sender when omitted.
+// MediaURL entries are sent as repeated MediaUrl parameters. ValidityPeriod
+// is in seconds; StatusCallbackMethod is "GET" or "POST".
 type CreateMessageParams struct {
-	To                  string  `form:"To"`
-	Body                string  `form:"Body"`
-	From                *string `form:"From"`
-	MessagingServiceSid *string `form:"MessagingServiceSid"`
-	StatusCallback      *string `form:"StatusCallback"`
+	To                   string   `form:"To"`
+	Body                 *string  `form:"Body"`
+	MediaURL             []string `form:"MediaUrl"`
+	From                 *string  `form:"From"`
+	MessagingServiceSid  *string  `form:"MessagingServiceSid"`
+	ValidityPeriod       *int     `form:"ValidityPeriod"`
+	StatusCallback       *string  `form:"StatusCallback"`
+	StatusCallbackMethod *string  `form:"StatusCallbackMethod"`
 }
 
 func (p CreateMessageParams) form() url.Values {
 	v := url.Values{}
 	v.Set("To", p.To)
-	v.Set("Body", p.Body)
-	if p.From != nil {
-		v.Set("From", *p.From)
+	setStringP(v, "From", p.From)
+	setStringP(v, "Body", p.Body)
+	for _, u := range p.MediaURL {
+		v.Add("MediaUrl", u)
 	}
-	if p.MessagingServiceSid != nil {
-		v.Set("MessagingServiceSid", *p.MessagingServiceSid)
-	}
-	if p.StatusCallback != nil {
-		v.Set("StatusCallback", *p.StatusCallback)
-	}
+	setStringP(v, "MessagingServiceSid", p.MessagingServiceSid)
+	setIntP(v, "ValidityPeriod", p.ValidityPeriod)
+	setStringP(v, "StatusCallback", p.StatusCallback)
+	setStringP(v, "StatusCallbackMethod", p.StatusCallbackMethod)
 	return v
 }
 
-// Create dispatches an outbound SMS.
+func (p CreateMessageParams) validate() error {
+	if p.Body == nil && len(p.MediaURL) == 0 {
+		return &ValidationError{Message: "CreateMessageParams needs Body or MediaURL"}
+	}
+	return nil
+}
+
+// Create dispatches an outbound SMS, or MMS when MediaURL is set.
+// POST /Messages. It returns *ValidationError, without sending, when
+// neither Body nor MediaURL is set.
 func (s *MessagesService) Create(ctx context.Context, params CreateMessageParams) (*Message, error) {
+	if err := params.validate(); err != nil {
+		return nil, err
+	}
 	var out Message
 	err := s.c.t.do(ctx, requestOpts{
 		method: "POST",
@@ -97,8 +112,8 @@ func (s *MessagesService) Fetch(ctx context.Context, sid string) (*Message, erro
 	return &out, nil
 }
 
-// ListMessagesParams narrows GET /Messages — Twilio's documented
-// filter set (To, From, DateSent eq/gt/lt) plus pagination.
+// ListMessagesParams narrows GET /Messages — the Twilio-compatible filter
+// set (To, From, DateSent eq/gt/lt) plus pagination.
 type ListMessagesParams struct {
 	To           *string
 	From         *string
@@ -128,6 +143,13 @@ func (p ListMessagesParams) query() url.Values {
 	return v
 }
 
+// Iterate walks every message matching the filters lazily, following each
+// page's next_page_uri. See Pager.
+func (s *MessagesService) Iterate(ctx context.Context, params ListMessagesParams) *Pager[Message] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Messages"), query: params.query()},
+		func(l *MessageList) ([]Message, PageLinks) { return l.Messages, l.Page })
+}
+
 // List returns a single page of Messages.
 func (s *MessagesService) List(ctx context.Context, params ListMessagesParams) (*MessageList, error) {
 	var out MessageList
@@ -142,9 +164,9 @@ func (s *MessagesService) List(ctx context.Context, params ListMessagesParams) (
 	return &out, nil
 }
 
-// UpdateMessageParams is the body for POST /Messages/{Sid}. Only
-// Body=""  (redaction) is honoured by the server today; Status=canceled
-// returns 21610 because VoiceTel SDK 2.2 is fire-and-forget.
+// UpdateMessageParams is the body for POST /Messages/{Sid}: Body=""
+// redacts the message body; Status="canceled" cancels a message that has
+// not been sent yet.
 type UpdateMessageParams struct {
 	Body   *string `form:"Body"`
 	Status *string `form:"Status"`
@@ -181,4 +203,120 @@ func (s *MessagesService) Delete(ctx context.Context, sid string) error {
 		method: "DELETE",
 		path:   s.c.pathf("Messages", sid),
 	}, nil)
+}
+
+// --- Feedback ---
+
+// MessageFeedback is the delivery-quality feedback echoed back for a
+// Message. Outcome is "confirmed" or "unconfirmed"; treat unknown values
+// as opaque.
+type MessageFeedback struct {
+	AccountSid  string `json:"account_sid"`
+	MessageSid  string `json:"message_sid"`
+	Outcome     string `json:"outcome"`
+	DateCreated string `json:"date_created"`
+	DateUpdated string `json:"date_updated"`
+	URI         string `json:"uri"`
+}
+
+// CreateMessageFeedbackParams is the body for POST
+// /Messages/{Sid}/Feedback.json. Outcome is "confirmed" or "unconfirmed";
+// any other value (or none) is treated as "unconfirmed" by the server.
+type CreateMessageFeedbackParams struct {
+	Outcome *string `form:"Outcome"`
+}
+
+func (p CreateMessageFeedbackParams) form() url.Values {
+	v := url.Values{}
+	setStringP(v, "Outcome", p.Outcome)
+	return v
+}
+
+// CreateFeedback submits delivery feedback for a previously-sent Message
+// and returns the echoed Feedback resource.
+// POST /Messages/{Sid}/Feedback.json.
+func (s *MessagesService) CreateFeedback(ctx context.Context, messageSid string, params CreateMessageFeedbackParams) (*MessageFeedback, error) {
+	var out MessageFeedback
+	err := s.c.t.do(ctx, requestOpts{
+		method: "POST",
+		path:   s.c.pathf("Messages", messageSid, "Feedback"),
+		form:   params.form(),
+	}, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// --- Media ---
+
+// MessageMedia is one media item attached to a message (ME...). ParentSid
+// is the message SID; ContentType is nil when unknown at send time.
+type MessageMedia struct {
+	Sid         string  `json:"sid"`
+	AccountSid  string  `json:"account_sid"`
+	ParentSid   string  `json:"parent_sid"`
+	ContentType *string `json:"content_type"`
+	DateCreated string  `json:"date_created"`
+	DateUpdated string  `json:"date_updated"`
+	URI         string  `json:"uri"`
+}
+
+// MessageMediaList is the paginated /Messages/{sid}/Media response.
+type MessageMediaList struct {
+	Page
+	MediaList []MessageMedia `json:"media_list"`
+}
+
+// ListMediaParams are the filter / pagination query params for
+// GET /Messages/{sid}/Media. DateCreated is a YYYY-MM-DD date (see Date).
+type ListMediaParams struct {
+	DateCreated   string
+	DateCreatedLt string
+	DateCreatedGt string
+	Page          *int
+	PageSize      *int
+	PageToken     string
+}
+
+func (p ListMediaParams) query() url.Values {
+	v := url.Values{}
+	setString(v, "DateCreated", p.DateCreated)
+	setString(v, "DateCreated<", p.DateCreatedLt)
+	setString(v, "DateCreated>", p.DateCreatedGt)
+	setIntP(v, "Page", p.Page)
+	setIntP(v, "PageSize", p.PageSize)
+	setString(v, "PageToken", p.PageToken)
+	return v
+}
+
+// ListMedia returns a page of a message's media. GET /Messages/{sid}/Media.
+func (s *MessagesService) ListMedia(ctx context.Context, messageSid string, params ListMediaParams) (*MessageMediaList, error) {
+	var out MessageMediaList
+	if err := s.c.t.do(ctx, requestOpts{method: "GET", path: s.c.pathf("Messages", messageSid, "Media"), query: params.query()}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// IterateMedia walks every media item of a message lazily.
+func (s *MessagesService) IterateMedia(ctx context.Context, messageSid string, params ListMediaParams) *Pager[MessageMedia] {
+	return newPager(ctx, s.c, s.c.t, requestOpts{method: "GET", path: s.c.pathf("Messages", messageSid, "Media"), query: params.query()},
+		func(l *MessageMediaList) ([]MessageMedia, PageLinks) { return l.MediaList, l.Page })
+}
+
+// FetchMedia returns one media item's metadata.
+// GET /Messages/{sid}/Media/{Sid}.
+func (s *MessagesService) FetchMedia(ctx context.Context, messageSid, mediaSid string) (*MessageMedia, error) {
+	var out MessageMedia
+	if err := s.c.t.do(ctx, requestOpts{method: "GET", path: s.c.pathf("Messages", messageSid, "Media", mediaSid)}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteMedia removes a media item from a message.
+// DELETE /Messages/{sid}/Media/{Sid}.
+func (s *MessagesService) DeleteMedia(ctx context.Context, messageSid, mediaSid string) error {
+	return s.c.t.do(ctx, requestOpts{method: "DELETE", path: s.c.pathf("Messages", messageSid, "Media", mediaSid)}, nil)
 }
