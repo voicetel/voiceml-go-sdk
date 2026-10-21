@@ -2,7 +2,7 @@
 
 The official Go client for the [VoiceML REST API](https://voicetel.com/docs/api/v0.9/voiceml/) — VoiceTel's Twilio-compatible voice, messaging and answering-machine-detection API — with strongly-typed, context-aware Go.
 
-![Version](https://img.shields.io/badge/version-0.9.4-blue)
+![Version](https://img.shields.io/badge/version-0.9.5-blue)
 ![Go](https://img.shields.io/badge/go-1.21%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT%20%2B%20Commons%20Clause-green)
 ![Typed](https://img.shields.io/badge/typed-native%20structs-blue)
