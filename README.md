@@ -414,7 +414,7 @@ params := voiceml.UpdateParticipantParams{
 fmt.Println(voiceml.String("text"), voiceml.Int(42), voiceml.Date(time.Now()), params)
 ```
 
-Booleans are sent as `true` / `false`, list parameters (`StatusCallbackEvent`, `MediaURL`, …) as repeated keys, and date-only filters as `YYYY-MM-DD` (`voiceml.Date` formats a `time.Time` in UTC).
+Booleans are sent as `true` / `false`, list parameters (`StatusCallbackEvent`, `MediaURL`, …) as repeated keys, date-only filters as `YYYY-MM-DD` (`voiceml.Date` formats a `time.Time` in UTC), and date-time parameters as RFC 3339 (`voiceml.Time`).
 
 ## 🔁 Migrating from twilio-go
 

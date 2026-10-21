@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "VoiceML — Twilio-compatible REST API",
-    "version": "0.9.3",
+    "version": "0.9.4",
     "summary": "Twilio-compatible voice (inbound + outbound), SMS, conferencing, recording, transcription, and payment platform",
     "description": "VoiceML exposes a Twilio-compatible REST + TwiML surface covering\nvoice (inbound + outbound calls, conferences, queues), SMS via the\nMessages resource, mid-call recording / SIPREC / real-time\ntranscription / `<Pay>` subresources, and the `IncomingPhoneNumbers`\n+ `Applications` configuration surfaces. Existing Twilio SDKs\n(`twilio-node`, `twilio-python`, `twilio-go`, ...) integrate with\nminimal migration effort. Authentication, error codes, and\npagination follow Twilio's documented conventions where supported.\n\nURL format: Twilio's canonical URL form ends with `.json` (e.g.\n`/Calls/{Sid}.json`). VoiceML accepts BOTH the `.json`-suffixed and\nthe unsuffixed form — the server strips a trailing `.json`/`.xml`/`.wav`\nsuffix before routing. The spec documents the\n`.json` form so SDKs generated against this spec produce\nTwilio-compatible URLs out of the box; existing clients that omit `.json`\ncontinue to work unchanged.\n\nAuthentication is per-tenant HTTP Basic:\n  * Username = `:AccountSid` (the URL path parameter, Twilio-format\n    AC + 32 hex chars). Same value the Twilio SDK validates in its\n    constructor — migration-compatible.\n  * Password = the per-account API key.\nThe same key is used to compute `X-Twilio-Signature` on outbound webhooks.\n\nSelf-serve key rotation is exposed: `POST /RotateKey` on the\nauthenticated account rotates the caller's own API key. Wider account\nadministration (create / disable / delete) is not part of the public\nAPI.\n",
     "contact": {
@@ -5395,6 +5395,10 @@
             "minimum": 1,
             "default": 60,
             "description": "Originate timeout (seconds)."
+          },
+          "TimeLimit": {
+            "type": "integer",
+            "description": "Max call duration in seconds. An explicit `0` or a value above `14400` is rejected (error 13216); a negative value disables the limit. Omitted, the 4-hour default cap applies."
           },
           "SendDigits": {
             "type": "string",
@@ -11516,6 +11520,24 @@
                       ]
                     },
                     "description": "Lifecycle events to report. Repeated keys carry one value each; a single space-separated value is also accepted. Default `completed`."
+                  },
+                  "ConferenceStatusCallback": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Participant's conference lifecycle webhook."
+                  },
+                  "ConferenceStatusCallbackMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ],
+                    "default": "POST"
+                  },
+                  "ConferenceStatusCallbackEvent": {
+                    "type": "string",
+                    "default": "start end",
+                    "description": "Space- or comma-separated conference event filter."
                   }
                 }
               }
@@ -12343,6 +12365,33 @@
                     "type": "string",
                     "format": "uri",
                     "description": "Legacy alias of MessageStatusCallback."
+                  },
+                  "SmsUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Inbound-SMS webhook URL for this Application."
+                  },
+                  "SmsMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
+                  },
+                  "SmsFallbackUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Called when requesting/executing the TwiML at SmsUrl fails."
+                  },
+                  "SmsFallbackMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
+                  },
+                  "PublicApplicationConnectEnabled": {
+                    "type": "boolean"
                   }
                 }
               }
@@ -12556,6 +12605,33 @@
                     "type": "string",
                     "format": "uri",
                     "description": "Legacy alias of MessageStatusCallback."
+                  },
+                  "SmsUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Inbound-SMS webhook URL for this Application."
+                  },
+                  "SmsMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
+                  },
+                  "SmsFallbackUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Called when requesting/executing the TwiML at SmsUrl fails."
+                  },
+                  "SmsFallbackMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
+                  },
+                  "PublicApplicationConnectEnabled": {
+                    "type": "boolean"
                   }
                 }
               }
@@ -15324,6 +15400,18 @@
                       "POST"
                     ],
                     "description": "HTTP method for the StatusCallback."
+                  },
+                  "SendAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Schedule the message for a future UTC time. Requires ScheduleType and MessagingServiceSid."
+                  },
+                  "ScheduleType": {
+                    "type": "string",
+                    "enum": [
+                      "fixed"
+                    ],
+                    "description": "`fixed` is the only supported value; anything else is a 400 (error 35126). Requires SendAt and MessagingServiceSid."
                   }
                 }
               }
@@ -16890,8 +16978,21 @@
                   "Hints": {
                     "type": "string"
                   },
-                  "StatusCallback": {
-                    "type": "string"
+                  "SpeechModel": {
+                    "type": "string",
+                    "description": "Engine-specific model hint (e.g. Deepgram's `nova-3`)."
+                  },
+                  "EnableAutomaticPunctuation": {
+                    "type": "boolean"
+                  },
+                  "IntelligenceService": {
+                    "type": "string",
+                    "description": "Accepted for Twilio compatibility; VoiceML has no Conversation Intelligence, so a set value logs a 32655 Notification and transcription proceeds."
+                  },
+                  "StatusCallbackUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Transcription lifecycle webhook (Twilio's REST name; no StatusCallback alias)."
                   },
                   "StatusCallbackMethod": {
                     "type": "string",
@@ -18463,6 +18564,10 @@
                       "paused",
                       "in-progress"
                     ]
+                  },
+                  "PauseBehavior": {
+                    "type": "string",
+                    "description": "With `Status=paused`: `skip` leaves the paused span out of the recording; `silence` (the default, also used for any other value) keeps it as silence."
                   }
                 }
               }

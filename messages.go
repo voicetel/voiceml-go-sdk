@@ -46,7 +46,9 @@ type MessageList struct {
 // so is at least one of Body or MediaURL (a message with MediaURL is sent
 // as MMS). From falls back to the server's default sender when omitted.
 // MediaURL entries are sent as repeated MediaUrl parameters. ValidityPeriod
-// is in seconds; StatusCallbackMethod is "GET" or "POST".
+// is in seconds; StatusCallbackMethod is "GET" or "POST". SendAt schedules
+// the message for a future UTC time (RFC 3339 — see Time); it requires
+// ScheduleType="fixed" (the only supported value) and MessagingServiceSid.
 type CreateMessageParams struct {
 	To                   string   `form:"To"`
 	Body                 *string  `form:"Body"`
@@ -56,6 +58,8 @@ type CreateMessageParams struct {
 	ValidityPeriod       *int     `form:"ValidityPeriod"`
 	StatusCallback       *string  `form:"StatusCallback"`
 	StatusCallbackMethod *string  `form:"StatusCallbackMethod"`
+	SendAt               *string  `form:"SendAt"`
+	ScheduleType         *string  `form:"ScheduleType"`
 }
 
 func (p CreateMessageParams) form() url.Values {
@@ -70,6 +74,8 @@ func (p CreateMessageParams) form() url.Values {
 	setIntP(v, "ValidityPeriod", p.ValidityPeriod)
 	setStringP(v, "StatusCallback", p.StatusCallback)
 	setStringP(v, "StatusCallbackMethod", p.StatusCallbackMethod)
+	setStringP(v, "SendAt", p.SendAt)
+	setStringP(v, "ScheduleType", p.ScheduleType)
 	return v
 }
 

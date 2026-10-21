@@ -245,7 +245,19 @@ func TestRecordingParamsAndApplicationCallbacks(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = c.Applications.Create(ctx, voiceml.ApplicationParams{MessageStatusCallback: voiceml.String("https://example.com/dlr"), SmsStatusCallback: voiceml.String("https://example.com/sms-dlr")})
+	_, err = c.Conferences.UpdateRecording(ctx, "CF1", "RE1", voiceml.UpdateRecordingParams{Status: "paused", PauseBehavior: voiceml.String("skip")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = c.Applications.Create(ctx, voiceml.ApplicationParams{
+		MessageStatusCallback:           voiceml.String("https://example.com/dlr"),
+		SmsStatusCallback:               voiceml.String("https://example.com/sms-dlr"),
+		SmsURL:                          voiceml.String("https://example.com/sms"),
+		SmsMethod:                       voiceml.String("POST"),
+		SmsFallbackURL:                  voiceml.String("https://example.com/sms-fb"),
+		SmsFallbackMethod:               voiceml.String("GET"),
+		PublicApplicationConnectEnabled: voiceml.Bool(true),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,12 +269,35 @@ func TestRecordingParamsAndApplicationCallbacks(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertWire(t, "start recording", (*calls)[0].body, "PlayBeep=false&RecordingTrack=inbound")
-	assertWire(t, "update recording", (*calls)[1].body, "PauseBehavior=skip&Status=paused")
-	assertWire(t, "application", (*calls)[2].body, "MessageStatusCallback=https%3A%2F%2Fexample.com%2Fdlr&SmsStatusCallback=https%3A%2F%2Fexample.com%2Fsms-dlr")
-	assertWire(t, "sip list", (*calls)[3].uri, "/2010-04-01/Accounts/"+testAccountSid+"/SIP/Domains.json?FriendlyName=edge&PageSize=10")
-	if udm := (*calls)[4]; udm.contentType != "application/x-www-form-urlencoded" || udm.body != "" {
+	assertWire(t, "update call recording", (*calls)[1].body, "PauseBehavior=skip&Status=paused")
+	assertWire(t, "update conference recording", (*calls)[2].body, "PauseBehavior=skip&Status=paused")
+	assertWire(t, "application", (*calls)[3].body, "MessageStatusCallback=https%3A%2F%2Fexample.com%2Fdlr&PublicApplicationConnectEnabled=true&SmsFallbackMethod=GET&SmsFallbackUrl=https%3A%2F%2Fexample.com%2Fsms-fb&SmsMethod=POST&SmsStatusCallback=https%3A%2F%2Fexample.com%2Fsms-dlr&SmsUrl=https%3A%2F%2Fexample.com%2Fsms")
+	assertWire(t, "sip list", (*calls)[4].uri, "/2010-04-01/Accounts/"+testAccountSid+"/SIP/Domains.json?FriendlyName=edge&PageSize=10")
+	if udm := (*calls)[5]; udm.contentType != "application/x-www-form-urlencoded" || udm.body != "" {
 		t.Fatalf("UserDefinedMessages: %+v", udm)
 	}
+}
+
+// The transcription-start callback sends StatusCallbackUrl (Twilio's REST
+// name — the old StatusCallback key was never applied server-side) plus the
+// 0.9.4 speech/intelligence hints.
+func TestTranscriptionStartParamsWire(t *testing.T) {
+	c, calls := threeHosts(t)
+	ctx := context.Background()
+	_, err := c.Calls.StartTranscription(ctx, "CA1", &voiceml.StartTranscriptionParams{
+		Track:                      voiceml.String("both_tracks"),
+		SpeechModel:                voiceml.String("nova-3"),
+		EnableAutomaticPunctuation: voiceml.Bool(true),
+		IntelligenceService:        voiceml.String("voice_intelligence"),
+		StatusCallbackURL:          voiceml.String("https://example.com/tr"),
+		StatusCallbackMethod:       voiceml.String("POST"),
+		StatusCallbackEvents:       voiceml.String("completed"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertWire(t, "transcription start body", (*calls)[0].body,
+		"EnableAutomaticPunctuation=true&IntelligenceService=voice_intelligence&SpeechModel=nova-3&StatusCallbackEvents=completed&StatusCallbackMethod=POST&StatusCallbackUrl=https%3A%2F%2Fexample.com%2Ftr&Track=both_tracks")
 }
 
 func TestAccountsUpdateConflict(t *testing.T) {

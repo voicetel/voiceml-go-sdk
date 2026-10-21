@@ -15,6 +15,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	voiceml "github.com/voicetel/voiceml-go-sdk"
 )
@@ -229,6 +230,7 @@ func TestCallsCreate(t *testing.T) {
 		From:             "+14155550101",
 		URL:              voiceml.String("https://example.com/twiml"),
 		MachineDetection: voiceml.String("DetectMessageEnd"),
+		TimeLimit:        voiceml.Int(3600),
 	})
 	if err != nil {
 		t.Fatalf("Calls.Create: %v", err)
@@ -255,7 +257,7 @@ func TestCallsCreate(t *testing.T) {
 		t.Fatalf("Content-Type: want form-urlencoded, got %q", got)
 	}
 	assertWire(t, "body", string(req.Body),
-		"From=%2B14155550101&MachineDetection=DetectMessageEnd&To=%2B14155550100&Url=https%3A%2F%2Fexample.com%2Ftwiml")
+		"From=%2B14155550101&MachineDetection=DetectMessageEnd&TimeLimit=3600&To=%2B14155550100&Url=https%3A%2F%2Fexample.com%2Ftwiml")
 }
 
 // 4. Calls.List — only the spec's query keys: StartTime< / StartTime> (no
@@ -1086,7 +1088,8 @@ func TestCallsListPageToken(t *testing.T) {
 	assertWire(t, "query", rec.requests[0].Query, "PageToken=cursor-abc123")
 }
 
-// 33. Conferences.CreateParticipant sends From/To (spec v0.6.6).
+// 33. Conferences.CreateParticipant sends From/To (spec v0.6.6) plus the
+// participant's conference lifecycle webhook (spec v0.9.4).
 func TestConferencesCreateParticipant(t *testing.T) {
 	confSid := "CF" + strings.Repeat("f", 32)
 	c, rec, cleanup := newClient(t, []handlerStep{
@@ -1102,13 +1105,16 @@ func TestConferencesCreateParticipant(t *testing.T) {
 	defer cleanup()
 
 	_, err := c.Conferences.CreateParticipant(context.Background(), confSid, voiceml.CreateParticipantParams{
-		From: "+14155550101",
-		To:   "+14155550100",
+		From:                           "+14155550101",
+		To:                             "+14155550100",
+		ConferenceStatusCallback:       voiceml.String("https://example.com/conf"),
+		ConferenceStatusCallbackMethod: voiceml.String("GET"),
+		ConferenceStatusCallbackEvent:  voiceml.String("start end"),
 	})
 	if err != nil {
 		t.Fatalf("Conferences.CreateParticipant: %v", err)
 	}
-	assertWire(t, "body", string(rec.requests[0].Body), "From=%2B14155550101&To=%2B14155550100")
+	assertWire(t, "body", string(rec.requests[0].Body), "ConferenceStatusCallback=https%3A%2F%2Fexample.com%2Fconf&ConferenceStatusCallbackEvent=start+end&ConferenceStatusCallbackMethod=GET&From=%2B14155550101&To=%2B14155550100")
 }
 
 // 34. Calls.ListNotifications sends Log and MessageDate filters (spec v0.6.6).
@@ -1178,7 +1184,8 @@ func messagePayload(sid string) map[string]any {
 	}
 }
 
-// 41. Messages.Create — POST /Messages with To/Body/From.
+// 41. Messages.Create — POST /Messages with To/Body/From, optionally
+// scheduled via SendAt + ScheduleType (spec v0.9.4).
 func TestMessagesCreate(t *testing.T) {
 	sid := "SM" + strings.Repeat("1", 32)
 	c, rec, cleanup := newClient(t, []handlerStep{
@@ -1187,9 +1194,12 @@ func TestMessagesCreate(t *testing.T) {
 	defer cleanup()
 
 	msg, err := c.Messages.Create(context.Background(), voiceml.CreateMessageParams{
-		To:   "+14155550100",
-		Body: voiceml.String("hello world"),
-		From: voiceml.String("+14155550101"),
+		To:                  "+14155550100",
+		Body:                voiceml.String("hello world"),
+		From:                voiceml.String("+14155550101"),
+		MessagingServiceSid: voiceml.String("MG" + strings.Repeat("1", 32)),
+		SendAt:              voiceml.String(voiceml.Time(time.Date(2026, 10, 22, 15, 4, 5, 0, time.UTC))),
+		ScheduleType:        voiceml.String("fixed"),
 	})
 	if err != nil {
 		t.Fatalf("Messages.Create: %v", err)
@@ -1206,7 +1216,7 @@ func TestMessagesCreate(t *testing.T) {
 	if req.Method != "POST" {
 		t.Fatalf("method: want POST, got %s", req.Method)
 	}
-	assertWire(t, "body", string(req.Body), "Body=hello+world&From=%2B14155550101&To=%2B14155550100")
+	assertWire(t, "body", string(req.Body), "Body=hello+world&From=%2B14155550101&MessagingServiceSid=MG11111111111111111111111111111111&ScheduleType=fixed&SendAt=2026-10-22T15%3A04%3A05Z&To=%2B14155550100")
 }
 
 // 42. Messages.Update — Body redaction sent as form field.

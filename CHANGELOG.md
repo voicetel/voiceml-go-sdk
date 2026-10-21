@@ -6,6 +6,34 @@ follow [Semantic Versioning](https://semver.org/). Earlier releases are
 described on the [GitHub Releases](https://github.com/voicetel/voiceml-go-sdk/releases)
 page.
 
+## [Unreleased]
+
+### Added
+
+- Calls create (`CreateCallParams.TimeLimit`): max call duration in
+  seconds. An explicit `0` or a value above `14400` is rejected
+  server-side; a negative value disables the limit.
+- Participants create (`CreateParticipantParams.ConferenceStatusCallback`,
+  `ConferenceStatusCallbackMethod`, `ConferenceStatusCallbackEvent`): the
+  participant's conference lifecycle webhook.
+- Conference recordings update (`UpdateRecordingParams.PauseBehavior`):
+  `skip` / `silence` with `Status="paused"`, mirroring the call-scoped
+  recording update.
+- Applications create/update (`ApplicationParams.SmsURL`, `SmsMethod`,
+  `SmsFallbackURL`, `SmsFallbackMethod`, `PublicApplicationConnectEnabled`):
+  the inbound-SMS webhook configuration and the public application connect
+  toggle.
+- Messages create (`CreateMessageParams.SendAt`, `ScheduleType`): schedule
+  a message for a future UTC time. `SendAt` takes RFC 3339 (the new `Time`
+  helper formats a `time.Time` in UTC), `ScheduleType` is `"fixed"` only,
+  and both require `MessagingServiceSid`.
+- Call transcriptions start (`StartTranscriptionParams.SpeechModel`,
+  `EnableAutomaticPunctuation`, `IntelligenceService`).
+
+Note: `StartTranscriptionParams.StatusCallback` is renamed
+`StatusCallbackURL` (sending `StatusCallbackUrl`); the old name was never
+applied server-side.
+
 ## [0.9.4] - 2026-10-21
 
 ### Added

@@ -117,17 +117,23 @@ func (p ListConferencesParams) query() url.Values {
 
 // CreateParticipantParams is the body for POST
 // /Conferences/{sid}/Participants. From and To are required.
+// ConferenceStatusCallback receives the participant's conference lifecycle
+// events (ConferenceStatusCallbackEvent filters them — space- or
+// comma-separated; ConferenceStatusCallbackMethod is "GET" or "POST").
 type CreateParticipantParams struct {
-	From                   string  `form:"From"`
-	To                     string  `form:"To"`
-	Label                  *string `form:"Label"`
-	Muted                  *bool   `form:"Muted"`
-	StartConferenceOnEnter *bool   `form:"StartConferenceOnEnter"`
-	EndConferenceOnExit    *bool   `form:"EndConferenceOnExit"`
-	Timeout                *int    `form:"Timeout"`
-	StatusCallback         *string `form:"StatusCallback"`
-	StatusCallbackMethod   *string `form:"StatusCallbackMethod"`
-	StatusCallbackEvent    *string `form:"StatusCallbackEvent"`
+	From                           string  `form:"From"`
+	To                             string  `form:"To"`
+	Label                          *string `form:"Label"`
+	Muted                          *bool   `form:"Muted"`
+	StartConferenceOnEnter         *bool   `form:"StartConferenceOnEnter"`
+	EndConferenceOnExit            *bool   `form:"EndConferenceOnExit"`
+	Timeout                        *int    `form:"Timeout"`
+	StatusCallback                 *string `form:"StatusCallback"`
+	StatusCallbackMethod           *string `form:"StatusCallbackMethod"`
+	StatusCallbackEvent            *string `form:"StatusCallbackEvent"`
+	ConferenceStatusCallback       *string `form:"ConferenceStatusCallback"`
+	ConferenceStatusCallbackMethod *string `form:"ConferenceStatusCallbackMethod"`
+	ConferenceStatusCallbackEvent  *string `form:"ConferenceStatusCallbackEvent"`
 }
 
 func (p CreateParticipantParams) form() url.Values {
@@ -142,6 +148,9 @@ func (p CreateParticipantParams) form() url.Values {
 	setStringP(v, "StatusCallback", p.StatusCallback)
 	setStringP(v, "StatusCallbackMethod", p.StatusCallbackMethod)
 	setStringP(v, "StatusCallbackEvent", p.StatusCallbackEvent)
+	setStringP(v, "ConferenceStatusCallback", p.ConferenceStatusCallback)
+	setStringP(v, "ConferenceStatusCallbackMethod", p.ConferenceStatusCallbackMethod)
+	setStringP(v, "ConferenceStatusCallbackEvent", p.ConferenceStatusCallbackEvent)
 	return v
 }
 

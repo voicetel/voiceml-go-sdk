@@ -45,19 +45,26 @@ type ApplicationList struct {
 // ApplicationParams is shared between create and update — every field
 // optional, only set ones are sent. For create, the spec does not require
 // any particular field; the server applies defaults. StatusCallbackEvent
-// is request-only: the server does not echo it on the Application.
+// is request-only: the server does not echo it on the Application. The
+// Sms* fields configure the inbound-SMS webhook; SmsStatusCallback is the
+// legacy per-message delivery-receipt alias of MessageStatusCallback.
 type ApplicationParams struct {
-	FriendlyName          *string `form:"FriendlyName"`
-	VoiceURL              *string `form:"VoiceUrl"`
-	VoiceMethod           *string `form:"VoiceMethod"`
-	VoiceFallbackURL      *string `form:"VoiceFallbackUrl"`
-	VoiceFallbackMethod   *string `form:"VoiceFallbackMethod"`
-	VoiceCallerIDLookup   *bool   `form:"VoiceCallerIdLookup"`
-	StatusCallback        *string `form:"StatusCallback"`
-	StatusCallbackMethod  *string `form:"StatusCallbackMethod"`
-	StatusCallbackEvent   *string `form:"StatusCallbackEvent"`
-	MessageStatusCallback *string `form:"MessageStatusCallback"`
-	SmsStatusCallback     *string `form:"SmsStatusCallback"`
+	FriendlyName                    *string `form:"FriendlyName"`
+	VoiceURL                        *string `form:"VoiceUrl"`
+	VoiceMethod                     *string `form:"VoiceMethod"`
+	VoiceFallbackURL                *string `form:"VoiceFallbackUrl"`
+	VoiceFallbackMethod             *string `form:"VoiceFallbackMethod"`
+	VoiceCallerIDLookup             *bool   `form:"VoiceCallerIdLookup"`
+	StatusCallback                  *string `form:"StatusCallback"`
+	StatusCallbackMethod            *string `form:"StatusCallbackMethod"`
+	StatusCallbackEvent             *string `form:"StatusCallbackEvent"`
+	MessageStatusCallback           *string `form:"MessageStatusCallback"`
+	SmsStatusCallback               *string `form:"SmsStatusCallback"`
+	SmsURL                          *string `form:"SmsUrl"`
+	SmsMethod                       *string `form:"SmsMethod"`
+	SmsFallbackURL                  *string `form:"SmsFallbackUrl"`
+	SmsFallbackMethod               *string `form:"SmsFallbackMethod"`
+	PublicApplicationConnectEnabled *bool   `form:"PublicApplicationConnectEnabled"`
 }
 
 func (p ApplicationParams) form() url.Values {
@@ -73,6 +80,11 @@ func (p ApplicationParams) form() url.Values {
 	setStringP(v, "StatusCallbackEvent", p.StatusCallbackEvent)
 	setStringP(v, "MessageStatusCallback", p.MessageStatusCallback)
 	setStringP(v, "SmsStatusCallback", p.SmsStatusCallback)
+	setStringP(v, "SmsUrl", p.SmsURL)
+	setStringP(v, "SmsMethod", p.SmsMethod)
+	setStringP(v, "SmsFallbackUrl", p.SmsFallbackURL)
+	setStringP(v, "SmsFallbackMethod", p.SmsFallbackMethod)
+	setBoolP(v, "PublicApplicationConnectEnabled", p.PublicApplicationConnectEnabled)
 	return v
 }
 

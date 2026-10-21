@@ -50,3 +50,7 @@ func (s *ExportsService) Download(ctx context.Context, date string) (*Download, 
 // Date formats t as the YYYY-MM-DD (UTC) date the API's date-only
 // parameters and filters expect (DateCreated, StartDate, Exports dates).
 func Date(t time.Time) string { return t.UTC().Format("2006-01-02") }
+
+// Time formats t as the RFC 3339 (UTC) timestamp the API's date-time
+// parameters expect (SendAt on Messages.Create).
+func Time(t time.Time) string { return t.UTC().Format(time.RFC3339) }

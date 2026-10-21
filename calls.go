@@ -51,7 +51,10 @@ type CallList struct {
 
 // CreateCallParams is the body for POST /Calls. To and From are required;
 // set exactly one of URL / Twiml / ApplicationSid (Twiml wins if multiple
-// are set — the Twilio-compatible precedence).
+// are set — the Twilio-compatible precedence). TimeLimit is the max call
+// duration in seconds: an explicit 0 or a value above 14400 is rejected
+// server-side, a negative value disables the limit, and omitted keeps the
+// 4-hour default cap.
 type CreateCallParams struct {
 	To   string `form:"To"`
 	From string `form:"From"`
@@ -80,6 +83,7 @@ type CreateCallParams struct {
 	RecordingTrack                     *string  `form:"RecordingTrack"`
 	Trim                               *string  `form:"Trim"`
 	Timeout                            *int     `form:"Timeout"`
+	TimeLimit                          *int     `form:"TimeLimit"`
 	SendDigits                         *string  `form:"SendDigits"`
 	CallerID                           *string  `form:"CallerId"`
 	CallReason                         *string  `form:"CallReason"`
@@ -120,6 +124,7 @@ func (p CreateCallParams) form() url.Values {
 	setStringP(v, "RecordingTrack", p.RecordingTrack)
 	setStringP(v, "Trim", p.Trim)
 	setIntP(v, "Timeout", p.Timeout)
+	setIntP(v, "TimeLimit", p.TimeLimit)
 	setStringP(v, "SendDigits", p.SendDigits)
 	setStringP(v, "CallerId", p.CallerID)
 	setStringP(v, "CallReason", p.CallReason)
@@ -532,17 +537,24 @@ type CallTranscription struct {
 }
 
 // StartTranscriptionParams is the body for POST /Calls/{sid}/Transcriptions.
+// SpeechModel is an engine-specific model hint (e.g. Deepgram's "nova-3").
+// IntelligenceService is accepted for Twilio compatibility; VoiceML has no
+// Conversation Intelligence, so a set value logs a 32655 Notification and
+// the transcription proceeds.
 type StartTranscriptionParams struct {
-	Name                 *string `form:"Name"`
-	Track                *string `form:"Track"`
-	LanguageCode         *string `form:"LanguageCode"`
-	TranscriptionEngine  *string `form:"TranscriptionEngine"`
-	ProfanityFilter      *bool   `form:"ProfanityFilter"`
-	PartialResults       *bool   `form:"PartialResults"`
-	Hints                *string `form:"Hints"`
-	StatusCallback       *string `form:"StatusCallback"`
-	StatusCallbackMethod *string `form:"StatusCallbackMethod"`
-	StatusCallbackEvents *string `form:"StatusCallbackEvents"`
+	Name                       *string `form:"Name"`
+	Track                      *string `form:"Track"`
+	LanguageCode               *string `form:"LanguageCode"`
+	TranscriptionEngine        *string `form:"TranscriptionEngine"`
+	ProfanityFilter            *bool   `form:"ProfanityFilter"`
+	PartialResults             *bool   `form:"PartialResults"`
+	Hints                      *string `form:"Hints"`
+	SpeechModel                *string `form:"SpeechModel"`
+	EnableAutomaticPunctuation *bool   `form:"EnableAutomaticPunctuation"`
+	IntelligenceService        *string `form:"IntelligenceService"`
+	StatusCallbackURL          *string `form:"StatusCallbackUrl"`
+	StatusCallbackMethod       *string `form:"StatusCallbackMethod"`
+	StatusCallbackEvents       *string `form:"StatusCallbackEvents"`
 }
 
 func (p StartTranscriptionParams) form() url.Values {
@@ -554,7 +566,10 @@ func (p StartTranscriptionParams) form() url.Values {
 	setBoolP(v, "ProfanityFilter", p.ProfanityFilter)
 	setBoolP(v, "PartialResults", p.PartialResults)
 	setStringP(v, "Hints", p.Hints)
-	setStringP(v, "StatusCallback", p.StatusCallback)
+	setStringP(v, "SpeechModel", p.SpeechModel)
+	setBoolP(v, "EnableAutomaticPunctuation", p.EnableAutomaticPunctuation)
+	setStringP(v, "IntelligenceService", p.IntelligenceService)
+	setStringP(v, "StatusCallbackUrl", p.StatusCallbackURL)
 	setStringP(v, "StatusCallbackMethod", p.StatusCallbackMethod)
 	setStringP(v, "StatusCallbackEvents", p.StatusCallbackEvents)
 	return v

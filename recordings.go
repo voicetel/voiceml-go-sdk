@@ -86,14 +86,18 @@ func (p UpdateCallRecordingParams) form() url.Values {
 
 // UpdateRecordingParams is the body for POST
 // /Conferences/{sid}/Recordings/{rsid}. Status takes "stopped", "paused",
-// or "in-progress" (resume after pause).
+// or "in-progress" (resume after pause). PauseBehavior applies with
+// Status="paused": "skip" leaves the paused span out, "silence" (the
+// default) keeps it as silence.
 type UpdateRecordingParams struct {
-	Status string `form:"Status"`
+	Status        string  `form:"Status"`
+	PauseBehavior *string `form:"PauseBehavior"`
 }
 
 func (p UpdateRecordingParams) form() url.Values {
 	v := url.Values{}
 	v.Set("Status", p.Status)
+	setStringP(v, "PauseBehavior", p.PauseBehavior)
 	return v
 }
 
