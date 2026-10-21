@@ -6,6 +6,15 @@ follow [Semantic Versioning](https://semver.org/). Earlier releases are
 described on the [GitHub Releases](https://github.com/voicetel/voiceml-go-sdk/releases)
 page.
 
+## [Unreleased]
+
+### Added
+
+- IncomingPhoneNumbers create/update could not set `VoiceApplicationSid`,
+  `StatusCallback` or `StatusCallbackMethod`; OutgoingCallerIds create could
+  not set `CallDelay`, `Extension`, `StatusCallback` or
+  `StatusCallbackMethod`.
+
 ## [0.9.3] - 2026-10-18
 
 ### Breaking changes

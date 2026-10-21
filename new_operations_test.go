@@ -77,9 +77,16 @@ func TestNewOperationsWire(t *testing.T) {
 			return err
 		}, wireCall{"default", "GET", acct + "/OutgoingCallerIds.json?FriendlyName=Main&PhoneNumber=%2B14155550100", "", "", ""}},
 		{"outgoing_caller_ids.create", func() error {
-			_, err := c.OutgoingCallerIDs.Create(ctx, voiceml.CreateOutgoingCallerIDParams{PhoneNumber: "+14155550100", FriendlyName: voiceml.String("Main Office")})
+			_, err := c.OutgoingCallerIDs.Create(ctx, voiceml.CreateOutgoingCallerIDParams{
+				PhoneNumber:          "+14155550100",
+				FriendlyName:         voiceml.String("Main Office"),
+				CallDelay:            voiceml.Int(5),
+				Extension:            voiceml.String("123"),
+				StatusCallback:       voiceml.String("https://example.com/validation"),
+				StatusCallbackMethod: voiceml.String("GET"),
+			})
 			return err
-		}, wireCall{"default", "POST", acct + "/OutgoingCallerIds.json", form, "FriendlyName=Main+Office&PhoneNumber=%2B14155550100", ""}},
+		}, wireCall{"default", "POST", acct + "/OutgoingCallerIds.json", form, "CallDelay=5&Extension=123&FriendlyName=Main+Office&PhoneNumber=%2B14155550100&StatusCallback=https%3A%2F%2Fexample.com%2Fvalidation&StatusCallbackMethod=GET", ""}},
 		{"outgoing_caller_ids.update", func() error {
 			_, err := c.OutgoingCallerIDs.Update(ctx, "PN1", voiceml.UpdateOutgoingCallerIDParams{FriendlyName: voiceml.String("Desk")})
 			return err

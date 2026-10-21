@@ -57,16 +57,27 @@ func (p ListOutgoingCallerIDsParams) query() url.Values {
 }
 
 // CreateOutgoingCallerIDParams is the body for POST /OutgoingCallerIds.
-// PhoneNumber (E.164) is required.
+// PhoneNumber (E.164) is required. CallDelay waits before placing the
+// verification call (server accepts 0-60 seconds); Extension dials an
+// extension after answer; StatusCallback / StatusCallbackMethod receive the
+// validation status webhook.
 type CreateOutgoingCallerIDParams struct {
-	PhoneNumber  string  `form:"PhoneNumber"`
-	FriendlyName *string `form:"FriendlyName"`
+	PhoneNumber          string  `form:"PhoneNumber"`
+	FriendlyName         *string `form:"FriendlyName"`
+	CallDelay            *int    `form:"CallDelay"`
+	Extension            *string `form:"Extension"`
+	StatusCallback       *string `form:"StatusCallback"`
+	StatusCallbackMethod *string `form:"StatusCallbackMethod"`
 }
 
 func (p CreateOutgoingCallerIDParams) form() url.Values {
 	v := url.Values{}
 	v.Set("PhoneNumber", p.PhoneNumber)
 	setStringP(v, "FriendlyName", p.FriendlyName)
+	setIntP(v, "CallDelay", p.CallDelay)
+	setStringP(v, "Extension", p.Extension)
+	setStringP(v, "StatusCallback", p.StatusCallback)
+	setStringP(v, "StatusCallbackMethod", p.StatusCallbackMethod)
 	return v
 }
 

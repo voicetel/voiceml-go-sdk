@@ -722,9 +722,12 @@ func TestIncomingPhoneNumbersCreate(t *testing.T) {
 
 	pn, err := c.IncomingPhoneNumbers.Create(context.Background(),
 		voiceml.CreateIncomingPhoneNumberParams{
-			PhoneNumber: "+14155550101",
-			VoiceURL:    voiceml.String("https://example.com/twiml"),
-			VoiceMethod: voiceml.String("POST"),
+			PhoneNumber:          "+14155550101",
+			VoiceURL:             voiceml.String("https://example.com/twiml"),
+			VoiceMethod:          voiceml.String("POST"),
+			VoiceApplicationSid:  voiceml.String("AP" + strings.Repeat("a", 32)),
+			StatusCallback:       voiceml.String("https://example.com/status"),
+			StatusCallbackMethod: voiceml.String("GET"),
 		})
 	if err != nil {
 		t.Fatalf("Create: %v", err)
@@ -745,7 +748,7 @@ func TestIncomingPhoneNumbersCreate(t *testing.T) {
 	if req.Method != "POST" {
 		t.Fatalf("method: want POST, got %s", req.Method)
 	}
-	assertWire(t, "body", string(req.Body), "PhoneNumber=%2B14155550101&VoiceMethod=POST&VoiceUrl=https%3A%2F%2Fexample.com%2Ftwiml")
+	assertWire(t, "body", string(req.Body), "PhoneNumber=%2B14155550101&StatusCallback=https%3A%2F%2Fexample.com%2Fstatus&StatusCallbackMethod=GET&VoiceApplicationSid=APaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&VoiceMethod=POST&VoiceUrl=https%3A%2F%2Fexample.com%2Ftwiml")
 }
 
 // 21. IncomingPhoneNumbers.Get — single-row fetch, request path includes
@@ -802,7 +805,10 @@ func TestIncomingPhoneNumbersUpdate(t *testing.T) {
 
 	pn, err := c.IncomingPhoneNumbers.Update(context.Background(), pnSid,
 		voiceml.UpdateIncomingPhoneNumberParams{
-			VoiceURL: voiceml.String("https://example.com/new"),
+			VoiceURL:             voiceml.String("https://example.com/new"),
+			VoiceApplicationSid:  voiceml.String("AP" + strings.Repeat("b", 32)),
+			StatusCallback:       voiceml.String("https://example.com/lifecycle"),
+			StatusCallbackMethod: voiceml.String("POST"),
 		})
 	if err != nil {
 		t.Fatalf("Update: %v", err)
@@ -810,8 +816,8 @@ func TestIncomingPhoneNumbersUpdate(t *testing.T) {
 	if pn.VoiceURL == nil || *pn.VoiceURL != "https://example.com/new" {
 		t.Fatalf("voice_url didn't round-trip: %+v", pn.VoiceURL)
 	}
-	// Only the field that was set reaches the wire.
-	assertWire(t, "body", string(rec.requests[0].Body), "VoiceUrl=https%3A%2F%2Fexample.com%2Fnew")
+	// Only the fields that were set reach the wire.
+	assertWire(t, "body", string(rec.requests[0].Body), "StatusCallback=https%3A%2F%2Fexample.com%2Flifecycle&StatusCallbackMethod=POST&VoiceApplicationSid=APbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb&VoiceUrl=https%3A%2F%2Fexample.com%2Fnew")
 }
 
 // 23. IncomingPhoneNumbers.Delete — 204 No Content, returns nil.

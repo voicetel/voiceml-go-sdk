@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "VoiceML — Twilio-compatible REST API",
-    "version": "0.9.2",
+    "version": "0.9.3",
     "summary": "Twilio-compatible voice (inbound + outbound), SMS, conferencing, recording, transcription, and payment platform",
     "description": "VoiceML exposes a Twilio-compatible REST + TwiML surface covering\nvoice (inbound + outbound calls, conferences, queues), SMS via the\nMessages resource, mid-call recording / SIPREC / real-time\ntranscription / `<Pay>` subresources, and the `IncomingPhoneNumbers`\n+ `Applications` configuration surfaces. Existing Twilio SDKs\n(`twilio-node`, `twilio-python`, `twilio-go`, ...) integrate with\nminimal migration effort. Authentication, error codes, and\npagination follow Twilio's documented conventions where supported.\n\nURL format: Twilio's canonical URL form ends with `.json` (e.g.\n`/Calls/{Sid}.json`). VoiceML accepts BOTH the `.json`-suffixed and\nthe unsuffixed form — the server strips a trailing `.json`/`.xml`/`.wav`\nsuffix before routing. The spec documents the\n`.json` form so SDKs generated against this spec produce\nTwilio-compatible URLs out of the box; existing clients that omit `.json`\ncontinue to work unchanged.\n\nAuthentication is per-tenant HTTP Basic:\n  * Username = `:AccountSid` (the URL path parameter, Twilio-format\n    AC + 32 hex chars). Same value the Twilio SDK validates in its\n    constructor — migration-compatible.\n  * Password = the per-account API key.\nThe same key is used to compute `X-Twilio-Signature` on outbound webhooks.\n\nSelf-serve key rotation is exposed: `POST /RotateKey` on the\nauthenticated account rotates the caller's own API key. Wider account\nadministration (create / disable / delete) is not part of the public\nAPI.\n",
     "contact": {
@@ -12652,6 +12652,28 @@
                   },
                   "FriendlyName": {
                     "type": "string"
+                  },
+                  "CallDelay": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 60,
+                    "description": "Seconds to wait before placing the verification call."
+                  },
+                  "Extension": {
+                    "type": "string",
+                    "description": "DTMF extension dialed after the verification call connects."
+                  },
+                  "StatusCallback": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Fires at the end of the verification call with VerificationStatus (success|failed) and OutgoingCallerIdSid on success."
+                  },
+                  "StatusCallbackMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
                   }
                 }
               }
@@ -19101,6 +19123,23 @@
                     "type": "string",
                     "pattern": "^AP[0-9a-fA-F]{32}$",
                     "description": "Binds the number to an Application whose `sms_*` fields supply the inbound-SMS webhook config; when set, they win over the number's own Sms fields."
+                  },
+                  "VoiceApplicationSid": {
+                    "type": "string",
+                    "pattern": "^AP[0-9a-fA-F]{32}$",
+                    "description": "Binds the number to an Application whose voice config wins outright over the number's own Voice* fields."
+                  },
+                  "StatusCallback": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Number-level lifecycle webhook for inbound calls to this DID; the session default fires the completed event."
+                  },
+                  "StatusCallbackMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
                   }
                 }
               }
@@ -19164,6 +19203,21 @@
                   "SmsApplicationSid": {
                     "type": "string",
                     "pattern": "^AP[0-9a-fA-F]{32}$"
+                  },
+                  "VoiceApplicationSid": {
+                    "type": "string",
+                    "pattern": "^AP[0-9a-fA-F]{32}$"
+                  },
+                  "StatusCallback": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "StatusCallbackMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
                   }
                 }
               }
@@ -19924,6 +19978,23 @@
                     "type": "string",
                     "pattern": "^AP[0-9a-fA-F]{32}$",
                     "description": "Binds the number to an Application whose `sms_*` fields supply the inbound-SMS webhook config; when set, they win over the number's own Sms fields."
+                  },
+                  "VoiceApplicationSid": {
+                    "type": "string",
+                    "pattern": "^AP[0-9a-fA-F]{32}$",
+                    "description": "Binds the number to an Application whose voice config wins outright over the number's own Voice* fields."
+                  },
+                  "StatusCallback": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Number-level lifecycle webhook for inbound calls to this DID; the session default fires the completed event."
+                  },
+                  "StatusCallbackMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
                   }
                 }
               }
@@ -19981,6 +20052,21 @@
                   "SmsApplicationSid": {
                     "type": "string",
                     "pattern": "^AP[0-9a-fA-F]{32}$"
+                  },
+                  "VoiceApplicationSid": {
+                    "type": "string",
+                    "pattern": "^AP[0-9a-fA-F]{32}$"
+                  },
+                  "StatusCallback": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "StatusCallbackMethod": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST"
+                    ]
                   }
                 }
               }

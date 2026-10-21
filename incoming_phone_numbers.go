@@ -115,18 +115,23 @@ type ListTypedIncomingPhoneNumbersParams = ListIncomingPhoneNumbersParams
 // rebinds its routing without erroring; returns 409 when the number is
 // already claimed by a different account. The Sms* fields configure the
 // inbound SMS webhook; SmsApplicationSid (AP...) routes inbound SMS to an
-// Application instead.
+// Application instead. VoiceApplicationSid routes inbound voice to an
+// Application; StatusCallback / StatusCallbackMethod set the number-level
+// lifecycle webhook for inbound calls.
 type CreateIncomingPhoneNumberParams struct {
-	PhoneNumber         string  `form:"PhoneNumber"`
-	VoiceURL            *string `form:"VoiceUrl"`
-	VoiceMethod         *string `form:"VoiceMethod"`
-	VoiceFallbackURL    *string `form:"VoiceFallbackUrl"`
-	VoiceFallbackMethod *string `form:"VoiceFallbackMethod"`
-	SmsURL              *string `form:"SmsUrl"`
-	SmsMethod           *string `form:"SmsMethod"`
-	SmsFallbackURL      *string `form:"SmsFallbackUrl"`
-	SmsFallbackMethod   *string `form:"SmsFallbackMethod"`
-	SmsApplicationSid   *string `form:"SmsApplicationSid"`
+	PhoneNumber          string  `form:"PhoneNumber"`
+	VoiceURL             *string `form:"VoiceUrl"`
+	VoiceMethod          *string `form:"VoiceMethod"`
+	VoiceFallbackURL     *string `form:"VoiceFallbackUrl"`
+	VoiceFallbackMethod  *string `form:"VoiceFallbackMethod"`
+	SmsURL               *string `form:"SmsUrl"`
+	SmsMethod            *string `form:"SmsMethod"`
+	SmsFallbackURL       *string `form:"SmsFallbackUrl"`
+	SmsFallbackMethod    *string `form:"SmsFallbackMethod"`
+	SmsApplicationSid    *string `form:"SmsApplicationSid"`
+	VoiceApplicationSid  *string `form:"VoiceApplicationSid"`
+	StatusCallback       *string `form:"StatusCallback"`
+	StatusCallbackMethod *string `form:"StatusCallbackMethod"`
 }
 
 func (p CreateIncomingPhoneNumberParams) form() url.Values {
@@ -137,6 +142,7 @@ func (p CreateIncomingPhoneNumberParams) form() url.Values {
 	setStringP(v, "VoiceFallbackUrl", p.VoiceFallbackURL)
 	setStringP(v, "VoiceFallbackMethod", p.VoiceFallbackMethod)
 	setSmsRouting(v, p.SmsURL, p.SmsMethod, p.SmsFallbackURL, p.SmsFallbackMethod, p.SmsApplicationSid)
+	setStatusCallbackRouting(v, p.VoiceApplicationSid, p.StatusCallback, p.StatusCallbackMethod)
 	return v
 }
 
@@ -161,15 +167,18 @@ func (p CreateTypedIncomingPhoneNumberParams) form() url.Values {
 // UpdateIncomingPhoneNumberParams is the body for
 // POST /IncomingPhoneNumbers/{sid}. Only-set-fields-touched semantics.
 type UpdateIncomingPhoneNumberParams struct {
-	VoiceURL            *string `form:"VoiceUrl"`
-	VoiceMethod         *string `form:"VoiceMethod"`
-	VoiceFallbackURL    *string `form:"VoiceFallbackUrl"`
-	VoiceFallbackMethod *string `form:"VoiceFallbackMethod"`
-	SmsURL              *string `form:"SmsUrl"`
-	SmsMethod           *string `form:"SmsMethod"`
-	SmsFallbackURL      *string `form:"SmsFallbackUrl"`
-	SmsFallbackMethod   *string `form:"SmsFallbackMethod"`
-	SmsApplicationSid   *string `form:"SmsApplicationSid"`
+	VoiceURL             *string `form:"VoiceUrl"`
+	VoiceMethod          *string `form:"VoiceMethod"`
+	VoiceFallbackURL     *string `form:"VoiceFallbackUrl"`
+	VoiceFallbackMethod  *string `form:"VoiceFallbackMethod"`
+	SmsURL               *string `form:"SmsUrl"`
+	SmsMethod            *string `form:"SmsMethod"`
+	SmsFallbackURL       *string `form:"SmsFallbackUrl"`
+	SmsFallbackMethod    *string `form:"SmsFallbackMethod"`
+	SmsApplicationSid    *string `form:"SmsApplicationSid"`
+	VoiceApplicationSid  *string `form:"VoiceApplicationSid"`
+	StatusCallback       *string `form:"StatusCallback"`
+	StatusCallbackMethod *string `form:"StatusCallbackMethod"`
 }
 
 func (p UpdateIncomingPhoneNumberParams) form() url.Values {
@@ -179,6 +188,7 @@ func (p UpdateIncomingPhoneNumberParams) form() url.Values {
 	setStringP(v, "VoiceFallbackUrl", p.VoiceFallbackURL)
 	setStringP(v, "VoiceFallbackMethod", p.VoiceFallbackMethod)
 	setSmsRouting(v, p.SmsURL, p.SmsMethod, p.SmsFallbackURL, p.SmsFallbackMethod, p.SmsApplicationSid)
+	setStatusCallbackRouting(v, p.VoiceApplicationSid, p.StatusCallback, p.StatusCallbackMethod)
 	return v
 }
 
@@ -188,6 +198,12 @@ func setSmsRouting(v url.Values, smsURL, method, fallbackURL, fallbackMethod, ap
 	setStringP(v, "SmsFallbackUrl", fallbackURL)
 	setStringP(v, "SmsFallbackMethod", fallbackMethod)
 	setStringP(v, "SmsApplicationSid", appSid)
+}
+
+func setStatusCallbackRouting(v url.Values, voiceAppSid, statusCallback, statusCallbackMethod *string) {
+	setStringP(v, "VoiceApplicationSid", voiceAppSid)
+	setStringP(v, "StatusCallback", statusCallback)
+	setStringP(v, "StatusCallbackMethod", statusCallbackMethod)
 }
 
 // List returns the page of DIDs assigned to this tenant.
